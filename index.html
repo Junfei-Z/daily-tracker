@@ -1685,17 +1685,15 @@ function renderCalendar() {
     document.querySelectorAll(".cal-day").forEach(el => el.addEventListener("click", () => showDayDetail(el.dataset.date)));
 }
 function showDayDetail(ds) {
-    const w = workMap.get(ds), ws = w ? `${w.totalMinutes||0} ${t('minWorked')}` : t('noWorkRecord');
+    const w = workMap.get(ds), ws = w ? `${w.totalMinutes||0} ${t('minFocused')}` : t('noWorkRecord');
     const mr = moodEntries.filter(m=>m.dateStr===ds).slice(-1)[0];
     const mn = mr ? (t('moodNames')[mr.mood]||mr.mood) : '';
     const ms = mr ? `${mn} ${mr.note||''} (${mr.exactTime||''})` : t('noMoodRecord');
-    const fm = focusMap.get(ds) || 0;
     document.getElementById("calendarDetail").innerHTML = `
         <div class="font-medium text-zinc-600 mb-1">${ds}</div>
         <div class="space-y-0.5 text-zinc-500">
             <div><i class="fas fa-clock text-indigo-400 mr-1"></i>${ws}</div>
             <div><i class="fas fa-heart text-indigo-300 mr-1"></i>${ms}</div>
-            <div><i class="fas fa-brain text-indigo-400 mr-1"></i>${fm} ${t('minFocused')}</div>
         </div>`;
 }
 
