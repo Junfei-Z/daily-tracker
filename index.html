@@ -1714,8 +1714,11 @@ function updateWeeklyInsights() {
     const heatmapEl = document.getElementById('weekHeatmap');
     const calWeekDays = t('calWeekDays') || ['日','一','二','三','四','五','六'];
 
-    // Compute daily focus minutes for last 7 days
-    const dailyFocus = dates.map(d => focusMap.get(d) || 0);
+    // Compute daily focus minutes for last 7 days from workMap (authoritative source)
+    const dailyFocus = dates.map(d => {
+        const rec = workMap.get(d);
+        return rec ? (rec.totalMinutes || 0) : 0;
+    });
     const maxFocus = Math.max(...dailyFocus, 1);
 
     // Render heatmap bars
@@ -1739,7 +1742,7 @@ function updateWeeklyInsights() {
     document.getElementById('heatmapStart').textContent = dates[0].slice(5);
     document.getElementById('heatmapEnd').textContent = dates[6].slice(5);
 
-    // Best phase: compute focus per phase across last 7 days using focusTimeline
+    // Best phase: compute focus per phase across last 7 days using workMap sessions
     const phaseRanges = [
         { key: 'phaseMorning', start: 6, end: 12 },
         { key: 'phaseAfternoon', start: 12, end: 18 },
@@ -1747,26 +1750,24 @@ function updateWeeklyInsights() {
         { key: 'phaseLateNight', start: 23, end: 30 } // 23-06 wraps
     ];
     const phaseMinutes = [0, 0, 0, 0];
-    const last7Start = new Date(dates[0] + 'T00:00:00').getTime();
-    const last7End = new Date(dates[6] + 'T23:59:59').getTime();
-    focusTimeline.forEach(s => {
-        if (!s.endTs) return;
-        const start = Math.max(s.startTs, last7Start);
-        const end = Math.min(s.endTs, last7End);
-        if (start >= end) return;
-        // Distribute minutes to phases based on hour
-        const sDate = new Date(start);
-        const eDate = new Date(end);
-        const sHour = sDate.getHours() + sDate.getMinutes() / 60;
-        const eHour = sHour + (end - start) / 3600000;
-        phaseRanges.forEach((pr, idx) => {
-            const pStart = pr.start;
-            const pEnd = pr.end;
-            const overlapStart = Math.max(sHour, pStart);
-            const overlapEnd = Math.min(eHour, pEnd);
-            if (overlapStart < overlapEnd) {
-                phaseMinutes[idx] += Math.round((overlapEnd - overlapStart) * 60);
-            }
+    dates.forEach(d => {
+        const rec = workMap.get(d);
+        if (!rec || !rec.sessions) return;
+        rec.sessions.forEach(s => {
+            if (!s.startTs || !s.endTs) return;
+            const sDate = new Date(s.startTs);
+            const sHour = sDate.getHours() + sDate.getMinutes() / 60;
+            const durationHours = (s.endTs - s.startTs) / 3600000;
+            const eHour = sHour + durationHours;
+            phaseRanges.forEach((pr, idx) => {
+                const pStart = pr.start;
+                const pEnd = pr.end;
+                const overlapStart = Math.max(sHour, pStart);
+                const overlapEnd = Math.min(eHour, pEnd);
+                if (overlapStart < overlapEnd) {
+                    phaseMinutes[idx] += Math.round((overlapEnd - overlapStart) * 60);
+                }
+            });
         });
     });
     const bestPhaseIdx = phaseMinutes.indexOf(Math.max(...phaseMinutes));
