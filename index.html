@@ -1740,40 +1740,21 @@ function updateWeeklyInsights() {
     document.getElementById('heatmapStart').textContent = dates[0].slice(5);
     document.getElementById('heatmapEnd').textContent = dates[6].slice(5);
 
-    // Best phase: compute focus per phase across last 7 days using workMap sessions
-    const phaseRanges = [
-        { key: 'phaseMorning', start: 6, end: 12 },
-        { key: 'phaseAfternoon', start: 12, end: 18 },
-        { key: 'phaseEvening', start: 18, end: 23 },
-        { key: 'phaseLateNight', start: 23, end: 30 } // 23-06 wraps
-    ];
-    const phaseMinutes = [0, 0, 0, 0];
-    dates.forEach(d => {
-        const rec = workMap.get(d);
-        if (!rec || !rec.sessions) return;
-        rec.sessions.forEach(s => {
-            if (!s.startTs || !s.endTs) return;
-            const sDate = new Date(s.startTs);
-            const sHour = sDate.getHours() + sDate.getMinutes() / 60;
-            const durationHours = (s.endTs - s.startTs) / 3600000;
-            const eHour = sHour + durationHours;
-            phaseRanges.forEach((pr, idx) => {
-                const pStart = pr.start;
-                const pEnd = pr.end;
-                const overlapStart = Math.max(sHour, pStart);
-                const overlapEnd = Math.min(eHour, pEnd);
-                if (overlapStart < overlapEnd) {
-                    phaseMinutes[idx] += Math.round((overlapEnd - overlapStart) * 60);
-                }
-            });
+    // Best phase: reuse getPhaseMinutes for exact consistency with day phases display
+    const phaseMinutes = DAY_PHASES.map(phase => {
+        let total = 0;
+        dates.forEach(d => {
+            const rec = workMap.get(d);
+            if (rec) total += getPhaseMinutes(phase, rec);
         });
+        return total;
     });
     const bestPhaseIdx = phaseMinutes.indexOf(Math.max(...phaseMinutes));
     const bestPhaseMins = phaseMinutes[bestPhaseIdx];
     const bestPhaseEl = document.getElementById('insightBestPhase');
     const bestPhaseDetailEl = document.getElementById('insightBestPhaseDetail');
     if (bestPhaseMins > 0) {
-        bestPhaseEl.textContent = t(phaseRanges[bestPhaseIdx].key);
+        bestPhaseEl.textContent = t(DAY_PHASES[bestPhaseIdx].i18n);
         bestPhaseDetailEl.textContent = bestPhaseMins + ' ' + t('minUnit');
     } else {
         bestPhaseEl.textContent = '—';
