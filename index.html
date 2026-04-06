@@ -1,0 +1,2606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Tracker | Junfei's Diary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
+    <script>
+        tailwind.config = { theme: { extend: { fontFamily: { sans: ['-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', '"Segoe UI"', 'Roboto', 'sans-serif'] } } } }
+    </script>
+    <style>
+        :root {
+            --accent: #6366f1; --accent-light: #818cf8; --accent-bg: #f5f3ff;
+            --accent-subtle: #ede9fe;
+            --warm: #a78bfa; --success: #6ee7b7; --danger: #fca5a5;
+            --surface: #ffffff; --surface-secondary: #fafafa;
+            --border: #f0f0f0; --border-strong: #e5e5e5;
+            --text-primary: #18181b; --text-secondary: #71717a; --text-tertiary: #a1a1aa;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: #f8f8fa;
+            background-attachment: fixed; font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif; min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        /* === Animations === */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 1; } 100% { transform: scale(2.2); opacity: 0; } }
+        @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+        @keyframes countUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes focusPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.96) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        .animate-fadein-up { animation: fadeInUp 0.4s ease both; }
+        .animate-fadein { animation: fadeIn 0.3s ease both; }
+        .animate-slide-right { animation: slideInRight 0.4s ease both; }
+        .stagger-1 { animation-delay: 0.05s; } .stagger-2 { animation-delay: 0.1s; }
+        .stagger-3 { animation-delay: 0.15s; } .stagger-4 { animation-delay: 0.2s; }
+
+        /* === Cards === */
+        .card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s ease;
+        }
+        .card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+        /* === Buttons === */
+        .btn-primary {
+            background: var(--accent); color: white; border: none; border-radius: 0.5rem;
+            font-weight: 500; transition: all 0.15s ease;
+        }
+        .btn-primary:hover { background: #5558e6; }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-go {
+            background: #059669; color: white; border: none; border-radius: 0.5rem;
+            font-weight: 500; transition: all 0.15s ease;
+        }
+        .btn-go:hover { background: #047857; }
+        .btn-go:active { transform: scale(0.98); }
+        .btn-stop {
+            background: #dc2626; color: white; border: none; border-radius: 0.5rem;
+            font-weight: 500; transition: all 0.15s ease;
+        }
+        .btn-stop:hover { background: #b91c1c; }
+        .btn-stop:active { transform: scale(0.98); }
+        .btn-ghost {
+            background: transparent; border: 1px solid var(--border-strong);
+            border-radius: 0.5rem; color: var(--text-secondary); font-weight: 500;
+            transition: all 0.15s ease;
+        }
+        .btn-ghost:hover { background: var(--accent-bg); border-color: var(--accent-light); color: var(--accent); }
+        .btn-ghost:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
+
+        /* === Inputs === */
+        .input-field {
+            background: var(--surface-secondary); border: 1px solid var(--border-strong);
+            border-radius: 0.5rem; padding: 0.5rem 0.75rem;
+            transition: all 0.15s ease; outline: none; width: 100%;
+            font-size: 0.875rem;
+        }
+        .input-field:focus { border-color: var(--accent-light); box-shadow: 0 0 0 3px rgba(99,102,241,0.08); }
+
+        /* === Mood === */
+        .mood-btn {
+            transition: all 0.15s ease; cursor: pointer; border-radius: 0.5rem;
+        }
+        .mood-btn:hover { background: var(--accent-bg); transform: scale(1.1); }
+        .mood-btn:active { transform: scale(0.95); }
+
+        /* === Work Panel (unified) === */
+        .work-panel {
+            background: var(--surface-secondary); border-radius: 0.75rem;
+            border: 1px solid var(--border); padding: 1.25rem;
+            transition: all 0.3s ease; position: relative;
+        }
+        .work-panel.is-working {
+            background: #f0fdf4; border-color: #bbf7d0;
+        }
+        .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+            position: relative; display: inline-block;
+        }
+        .pulse-dot::after {
+            content: ''; position: absolute; inset: 0; border-radius: 50%;
+            background: #22c55e; animation: pulse-ring 1.5s ease-out infinite;
+        }
+
+        /* === Tasks === */
+        .badge {
+            display: inline-flex; align-items: center; gap: 0.25rem;
+            padding: 0.125rem 0.5rem; border-radius: 0.25rem;
+            font-size: 0.6875rem; font-weight: 500;
+        }
+        .task-item {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 0.625rem; padding: 0.625rem 0.75rem;
+            transition: all 0.15s ease;
+            animation: fadeInUp 0.3s ease both;
+        }
+        .task-item:hover { border-color: var(--border-strong); }
+        .task-item.focusing {
+            background: #fffbeb; border-color: #fde68a;
+        }
+        .task-completed span.task-text { text-decoration: line-through; color: var(--text-tertiary); }
+
+        /* 24h Task Timeline — 4-phase segmented */
+        .timeline-phases { display: flex; gap: 3px; }
+        .timeline-phase-segment {
+            flex: 1; position: relative; height: 40px;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 0.5rem; overflow: hidden;
+        }
+        .timeline-phase-wrapper { position: relative; }
+        .timeline-phase-segment.phase-morning { background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%); border-color: #fef08a; }
+        .timeline-phase-segment.phase-afternoon { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe; }
+        .timeline-phase-segment.phase-evening { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-color: #ddd6fe; }
+        .timeline-phase-segment.phase-latenight { background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); border-color: #4338ca; }
+        .timeline-phase-block {
+            position: absolute; top: 3px; bottom: 3px; border-radius: 3px;
+            min-width: 2px; transition: opacity 0.15s;
+        }
+        .timeline-phase-block:hover { opacity: 0.9; filter: brightness(1.1); }
+        .timeline-phase-header {
+            font-size: 0.5625rem; font-weight: 600; text-align: center;
+            padding: 0 2px; margin-bottom: 2px; line-height: 1;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .timeline-phase-header.dark { color: rgba(255,255,255,0.6); }
+        .timeline-phase-header.light { color: var(--text-tertiary); }
+        .timeline-phase-time {
+            display: flex; justify-content: space-between;
+            font-size: 0.5rem; padding: 0 3px; margin-top: 2px;
+        }
+        .timeline-phase-time.dark { color: rgba(255,255,255,0.4); }
+        .timeline-phase-time.light { color: var(--text-tertiary); opacity: 0.7; }
+        .timeline-phase-now {
+            position: absolute; top: 0; bottom: 0; width: 2px;
+            background: #ef4444; z-index: 3; border-radius: 1px;
+            box-shadow: 0 0 4px rgba(239,68,68,0.5);
+        }
+        .timeline-phase-now-label {
+            position: absolute; z-index: 4;
+            font-size: 0.5rem; font-weight: 600; color: #ef4444;
+            white-space: nowrap; transform: translateX(-50%);
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+        }
+        .timeline-legend { display: flex; flex-wrap: wrap; gap: 0.625rem; margin-top: 0.75rem; }
+        .timeline-legend-item { display: flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; color: var(--text-secondary); }
+        .timeline-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+        /* Session picker dropdown */
+        .session-picker {
+            background: white; border: 1px solid var(--border); border-radius: 0.5rem;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.15); padding: 0.5rem;
+            max-height: 240px; overflow-y: auto;
+            animation: fadeInUp 0.15s ease both;
+        }
+        .session-picker-item {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.375rem 0.5rem; border-radius: 0.375rem;
+            cursor: pointer; font-size: 0.75rem; transition: background 0.1s;
+        }
+        .session-picker-item:hover { background: var(--accent-bg); }
+        .session-picker-item input[type="checkbox"] { accent-color: var(--accent); }
+        .session-picker-item .session-info { flex: 1; color: var(--text-secondary); }
+        .session-picker-item .session-dur { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+        .btn-clock {
+            height: 28px; border-radius: 0.375rem; border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-tertiary); font-size: 0.65rem;
+            display: inline-flex; align-items: center; gap: 0.25rem;
+            padding: 0 0.5rem;
+            cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .btn-clock:hover { border-color: var(--accent-light); color: var(--accent); background: var(--accent-bg); }
+        .btn-clock.has-sessions { color: var(--accent); border-color: var(--accent-light); background: var(--accent-bg); }
+        .btn-complete {
+            width: 26px; height: 26px; border-radius: 0.375rem; border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-tertiary); font-size: 0.6rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;
+        }
+        .btn-complete:hover { border-color: #059669; color: #059669; background: #ecfdf5; }
+        .btn-complete.is-done { background: #059669; color: white; border-color: #059669; }
+
+        .timeline-entry {
+            border-left: 2px solid var(--accent-light);
+            padding: 0.5rem 0.75rem; border-radius: 0 0.5rem 0.5rem 0;
+            background: var(--accent-bg);
+            animation: fadeInUp 0.3s ease both;
+        }
+
+        /* === Stats === */
+        .stat-card {
+            background: var(--surface); border-radius: 0.625rem; padding: 0.75rem;
+            text-align: center; border: 1px solid var(--border);
+        }
+        .stat-number { animation: countUp 0.4s ease both; }
+
+        /* === Calendar === */
+        .cal-day {
+            border-radius: 0.375rem; padding: 0.3rem; text-align: center;
+            font-size: 0.75rem; cursor: pointer;
+            transition: all 0.15s ease; font-weight: 500;
+        }
+        .cal-day:hover { background: var(--accent-bg); }
+        .cal-day.has-record { background: var(--accent-subtle); color: var(--accent); font-weight: 600; }
+        .cal-day.is-today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+        /* === Chips === */
+        .chip {
+            display: inline-flex; align-items: center; padding: 0.25rem 0.625rem;
+            border-radius: 0.375rem; font-size: 0.75rem; font-weight: 500;
+            cursor: pointer; transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .chip:hover { background: var(--accent-bg); }
+        .chip.active { background: var(--accent) !important; color: white !important; }
+
+        .focus-pulse { animation: focusPulse 2s infinite; }
+        .section-title {
+            font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 0.5rem;
+            text-transform: uppercase; letter-spacing: 0.04em;
+        }
+
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 9999px; }
+        .timer-display { font-variant-numeric: tabular-nums; font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace; }
+
+        .lang-toggle { cursor: pointer; user-select: none; transition: all 0.15s ease; }
+        .lang-toggle:hover { background: var(--accent-bg); }
+        .lang-toggle:active { transform: scale(0.96); }
+
+        /* Work timer big display */
+        .work-timer-big {
+            font-size: 2.25rem; font-weight: 700; letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+        .work-timer-big.is-running {
+            color: #059669;
+        }
+
+        /* Session log items */
+        .session-log-item {
+            transition: all 0.15s ease; animation: fadeInUp 0.3s ease both;
+        }
+
+        /* Modal animations */
+        .modal-backdrop { transition: opacity 0.2s ease; }
+        .modal-content { animation: modalIn 0.25s ease both; }
+
+        /* === Header Clock === */
+        .header-clock {
+            font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        /* === Focus button on tasks === */
+        .btn-focus {
+            background: var(--accent-bg); border: 1px solid var(--accent-light);
+            border-radius: 0.5rem; color: var(--accent); font-weight: 500;
+            transition: all 0.15s ease; font-size: 0.75rem;
+            padding: 0.25rem 0.625rem; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+        }
+        .btn-focus:hover { background: var(--accent); color: white; }
+        .btn-focus.active-focus {
+            background: #f59e0b; border-color: #f59e0b; color: white;
+        }
+        .btn-focus.active-focus:hover { background: #d97706; border-color: #d97706; }
+
+        /* Focusing on info bar */
+        .focusing-on-bar {
+            background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem; margin-top: 0.75rem;
+            display: flex; align-items: center; gap: 0.5rem;
+            animation: fadeInUp 0.3s ease both;
+        }
+
+        /* === Zen Fullscreen Mode === */
+        .zen-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            overflow: hidden; cursor: default;
+        }
+        .zen-overlay.active { display: flex; animation: fadeIn 0.8s ease both; }
+
+        .zen-bg { position: absolute; inset: 0; transition: background 8s ease; }
+
+        .zen-stars { position: absolute; inset: 0; overflow: hidden; transition: opacity 3s ease; }
+        .zen-star {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle var(--tw-dur, 3s) ease-in-out infinite alternate;
+            animation-delay: var(--tw-delay, 0s);
+        }
+        @keyframes twinkle { 0%{opacity:0.15; transform:scale(0.6)} 50%{opacity:1; transform:scale(1.3)} 100%{opacity:0.3; transform:scale(0.8)} }
+
+        .zen-clouds { position: absolute; inset: 0; overflow: hidden; transition: opacity 3s ease; }
+        .zen-cloud {
+            position: absolute; background: white; border-radius: 50%;
+            filter: blur(1px); opacity: 0.7;
+        }
+        .zen-cloud::before, .zen-cloud::after {
+            content: ''; position: absolute; background: white; border-radius: 50%;
+        }
+        .zen-cloud-1 { width: 120px; height: 40px; animation: cloudDrift1 45s linear infinite; }
+        .zen-cloud-1::before { width: 60px; height: 60px; top: -30px; left: 20px; }
+        .zen-cloud-1::after { width: 80px; height: 50px; top: -20px; left: 50px; }
+        .zen-cloud-2 { width: 90px; height: 30px; animation: cloudDrift2 60s linear infinite; opacity: 0.5; }
+        .zen-cloud-2::before { width: 45px; height: 45px; top: -22px; left: 15px; }
+        .zen-cloud-2::after { width: 60px; height: 38px; top: -15px; left: 35px; }
+        .zen-cloud-3 { width: 150px; height: 45px; animation: cloudDrift3 55s linear infinite; opacity: 0.4; }
+        .zen-cloud-3::before { width: 70px; height: 70px; top: -35px; left: 25px; }
+        .zen-cloud-3::after { width: 90px; height: 55px; top: -25px; left: 60px; }
+        .zen-cloud-4 { width: 70px; height: 25px; animation: cloudDrift2 70s linear infinite; opacity: 0.35; }
+        .zen-cloud-4::before { width: 35px; height: 35px; top: -18px; left: 10px; }
+        .zen-cloud-4::after { width: 50px; height: 30px; top: -12px; left: 28px; }
+        @keyframes cloudDrift1 { 0%{transform:translateX(-200px)} 100%{transform:translateX(calc(100vw + 200px))} }
+        @keyframes cloudDrift2 { 0%{transform:translateX(calc(100vw + 150px))} 100%{transform:translateX(-250px)} }
+        @keyframes cloudDrift3 { 0%{transform:translateX(-300px)} 100%{transform:translateX(calc(100vw + 300px))} }
+
+        .zen-mountains { position: absolute; bottom: 0; left: 0; right: 0; height: 35%; }
+        .zen-mountain { position: absolute; bottom: 0; width: 0; height: 0; border-style: solid; border-color: transparent; transition: border-bottom-color 8s ease; }
+        .zen-mountain-1 { left: -5%; border-width: 0 35vw 28vh 35vw; }
+        .zen-mountain-2 { left: 15%; border-width: 0 30vw 35vh 30vw; }
+        .zen-mountain-3 { left: 40%; border-width: 0 25vw 22vh 25vw; }
+        .zen-mountain-4 { left: 55%; border-width: 0 35vw 30vh 35vw; }
+
+        .zen-fog {
+            position: absolute; bottom: 15%; left: -10%; right: -10%; height: 12%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), rgba(255,255,255,0.08), rgba(255,255,255,0.04), transparent);
+            animation: fogDrift 20s ease-in-out infinite alternate; filter: blur(8px);
+            transition: opacity 3s ease;
+        }
+        @keyframes fogDrift { 0%{transform:translateX(-5%)} 100%{transform:translateX(5%)} }
+
+        .zen-sun {
+            position: absolute; width: 70px; height: 70px; border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #fff7b0, #fbbf24, #f59e0b);
+            box-shadow: 0 0 60px 20px rgba(251,191,36,0.4), 0 0 120px 50px rgba(251,191,36,0.15);
+            transition: left 60s linear, bottom 60s linear, opacity 3s ease, transform 3s ease;
+        }
+        .zen-sun-rays {
+            position: absolute; width: 100%; height: 100%; animation: sunRotate 30s linear infinite;
+        }
+        .zen-sun-rays::before, .zen-sun-rays::after {
+            content: ''; position: absolute; inset: -15px; border-radius: 50%;
+            border: 2px solid rgba(251,191,36,0.15);
+        }
+        .zen-sun-rays::after { inset: -30px; border-color: rgba(251,191,36,0.08); }
+        @keyframes sunRotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+        .zen-moon {
+            position: absolute; width: 55px; height: 55px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #f5f5f0, #e5e5d8);
+            box-shadow: 0 0 40px 12px rgba(245,245,240,0.2), 0 0 80px 30px rgba(245,245,240,0.08);
+            transition: left 60s linear, bottom 60s linear, opacity 3s ease, transform 3s ease;
+        }
+        .zen-moon-crater { position: absolute; border-radius: 50%; background: rgba(0,0,0,0.06); }
+        .zen-moon-crater-1 { width: 12px; height: 12px; top: 15px; left: 10px; }
+        .zen-moon-crater-2 { width: 8px; height: 8px; top: 28px; left: 28px; }
+        .zen-moon-crater-3 { width: 6px; height: 6px; top: 12px; left: 30px; }
+        .zen-moon-glow {
+            position: absolute; inset: -8px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(245,245,240,0.1), transparent 70%);
+            animation: moonBreathe 4s ease-in-out infinite;
+        }
+        @keyframes moonBreathe { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(1.15);opacity:1} }
+
+        .zen-task-name {
+            z-index: 2; margin-top: 1.5rem;
+            font-size: clamp(1rem, 3vw, 1.5rem); font-weight: 300;
+            color: rgba(255,255,255,0.6); letter-spacing: 0.08em;
+            padding: 0.5rem 1.5rem; border-radius: 9999px;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeInUp 0.6s ease both;
+        }
+        .zen-task-name i { margin-right: 0.5rem; color: rgba(255,255,255,0.4); }
+
+        .zen-clock {
+            font-size: clamp(4rem, 12vw, 8rem); font-weight: 200; color: white;
+            letter-spacing: 0.05em; text-shadow: 0 2px 40px rgba(0,0,0,0.3);
+            z-index: 2; line-height: 1;
+        }
+        .zen-date {
+            font-size: clamp(0.875rem, 2vw, 1.25rem); color: rgba(255,255,255,0.5);
+            font-weight: 300; letter-spacing: 0.15em; text-transform: uppercase;
+            margin-top: 0.5rem; z-index: 2;
+        }
+        .zen-work-timer { margin-top: 2rem; z-index: 2; text-align: center; }
+        .zen-work-timer .label {
+            font-size: 0.75rem; color: rgba(255,255,255,0.4); letter-spacing: 0.2em;
+            text-transform: uppercase; margin-bottom: 0.5rem;
+        }
+        .zen-work-timer .time {
+            font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 600; color: rgba(255,255,255,0.9);
+            text-shadow: 0 2px 20px rgba(0,0,0,0.2);
+        }
+        .zen-work-timer .pulse-ring-zen {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+            background: #34d399; margin-right: 8px; vertical-align: middle;
+            box-shadow: 0 0 12px 4px rgba(52,211,153,0.4);
+            animation: focusPulse 2s infinite;
+        }
+        .zen-exit-btn {
+            position: absolute; bottom: 2.5rem; z-index: 3;
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15); border-radius: 9999px;
+            color: rgba(255,255,255,0.6); padding: 0.75rem 2rem;
+            font-size: 0.875rem; font-weight: 500; cursor: pointer;
+            transition: all 0.2s ease; letter-spacing: 0.05em;
+        }
+        .zen-exit-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+        .zen-quote {
+            position: absolute; bottom: 6rem; z-index: 2;
+            font-size: 0.875rem; color: rgba(255,255,255,0.35); font-style: italic;
+            max-width: 400px; text-align: center; line-height: 1.6;
+        }
+
+        .zen-audio {
+            position: absolute; bottom: 2.5rem; left: 2rem; z-index: 3;
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 9999px;
+            padding: 0.5rem 0.75rem; animation: fadeIn 1s ease 0.5s both;
+        }
+        .zen-audio-btn {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.5); font-size: 0.75rem;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;
+        }
+        .zen-audio-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+        .zen-audio-btn.active { background: rgba(99,102,241,0.4); border-color: rgba(99,102,241,0.5); color: white; }
+        .zen-audio-btn.muted { opacity: 0.3; }
+        .zen-volume {
+            -webkit-appearance: none; appearance: none; width: 70px; height: 3px;
+            background: rgba(255,255,255,0.15); border-radius: 9999px; outline: none;
+            cursor: pointer;
+        }
+        .zen-volume::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+            background: rgba(255,255,255,0.7); cursor: pointer;
+        }
+        .zen-sound-label {
+            font-size: 0.6rem; color: rgba(255,255,255,0.35); letter-spacing: 0.1em;
+            text-transform: uppercase; min-width: 32px; text-align: center;
+        }
+
+        /* === Streak Badge === */
+        .streak-badge {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #fcd34d; border-radius: 9999px;
+            padding: 0.2rem 0.625rem; font-size: 0.75rem; font-weight: 600;
+            color: #92400e; white-space: nowrap;
+        }
+
+        /* === Flash Notes === */
+        .flash-note-item {
+            display: flex; align-items: flex-start; gap: 0.5rem;
+            padding: 0.5rem 0.625rem; background: var(--surface-secondary);
+            border: 1px solid var(--border); border-radius: 0.5rem;
+            animation: fadeInUp 0.3s ease both;
+        }
+        .flash-note-item:hover { border-color: var(--border-strong); }
+        .flash-note-item .flash-time {
+            font-size: 0.6875rem; color: var(--text-tertiary);
+            font-variant-numeric: tabular-nums; flex-shrink: 0; padding-top: 0.1rem;
+        }
+        .flash-note-item .flash-text {
+            flex: 1; font-size: 0.8125rem; color: var(--text-primary); line-height: 1.5;
+            word-break: break-word;
+        }
+        .flash-note-item .flash-del {
+            flex-shrink: 0; width: 20px; height: 20px; border-radius: 0.25rem;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-tertiary); cursor: pointer; transition: all 0.15s ease;
+            font-size: 0.6rem; opacity: 0; padding-top: 0.1rem;
+        }
+        .flash-note-item:hover .flash-del { opacity: 1; }
+        .flash-note-item .flash-del:hover { color: #ef4444; background: #fef2f2; }
+
+        /* === Day Phases === */
+        .phase-bar {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;
+        }
+        .phase-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 0.625rem; padding: 0.5rem 0.625rem;
+            text-align: center; transition: all 0.2s ease;
+        }
+        .phase-card.phase-active {
+            border-color: var(--accent-light); box-shadow: 0 0 0 2px rgba(99,102,241,0.08);
+            cursor: pointer;
+        }
+        .phase-card.phase-active:hover {
+            background: rgba(99,102,241,0.06); transform: translateY(-1px);
+        }
+        .phase-card.phase-locked {
+            opacity: 0.45;
+        }
+        .phase-card .phase-icon { font-size: 1.125rem; line-height: 1; }
+        .phase-card .phase-name { font-size: 0.625rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.25rem; }
+        .phase-card .phase-range { font-size: 0.5625rem; color: var(--text-tertiary); }
+        .phase-card .phase-status { margin-top: 0.25rem; font-size: 0.625rem; font-weight: 600; }
+        .phase-card .phase-status.worked { color: #059669; }
+        .phase-card .phase-status.idle { color: var(--text-tertiary); }
+
+        @media (max-width: 768px) {
+            .work-timer-big { font-size: 1.75rem; } .header-clock { font-size: 1.125rem; }
+            .zen-audio { left: 50%; transform: translateX(-50%); bottom: 7rem; }
+            .phase-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6 max-w-6xl mx-auto">
+
+    <!-- Zen Fullscreen Overlay -->
+    <div id="zenOverlay" class="zen-overlay">
+        <div class="zen-bg" id="zenBg"></div>
+        <div class="zen-stars" id="zenStars"></div>
+        <div class="zen-clouds" id="zenClouds">
+            <div class="zen-cloud zen-cloud-1" style="top:10%"></div>
+            <div class="zen-cloud zen-cloud-2" style="top:18%"></div>
+            <div class="zen-cloud zen-cloud-3" style="top:6%"></div>
+            <div class="zen-cloud zen-cloud-4" style="top:25%"></div>
+        </div>
+        <div class="zen-sun" id="zenSun"><div class="zen-sun-rays"></div></div>
+        <div class="zen-moon" id="zenMoon">
+            <div class="zen-moon-glow"></div>
+            <div class="zen-moon-crater zen-moon-crater-1"></div>
+            <div class="zen-moon-crater zen-moon-crater-2"></div>
+            <div class="zen-moon-crater zen-moon-crater-3"></div>
+        </div>
+        <div class="zen-mountains" id="zenMountains">
+            <div class="zen-mountain zen-mountain-1"></div>
+            <div class="zen-mountain zen-mountain-2"></div>
+            <div class="zen-mountain zen-mountain-3"></div>
+            <div class="zen-mountain zen-mountain-4"></div>
+        </div>
+        <div class="zen-fog" id="zenFog"></div>
+        <div class="zen-clock timer-display" id="zenClock">00:00:00</div>
+        <div class="zen-date" id="zenDate"></div>
+        <div id="zenPhaseLabel" style="z-index:2; margin-top:0.5rem; font-size:0.8rem; color:rgba(255,255,255,0.45); letter-spacing:0.15em; font-weight:300;"></div>
+        <div id="zenTaskName" class="zen-task-name" style="display:none;"></div>
+        <div class="zen-work-timer">
+            <div class="label" id="zenTimerLabel" data-i18n="workingNow"></div>
+            <div class="time timer-display"><span class="pulse-ring-zen"></span><span id="zenWorkTimer">00:00:00</span></div>
+        </div>
+        <div class="zen-quote" id="zenQuote"></div>
+        <div class="zen-audio" id="zenAudio">
+            <button class="zen-audio-btn" id="zenMuteBtn" title="Mute"><i class="fas fa-volume-up"></i></button>
+            <input type="range" class="zen-volume" id="zenVolume" min="0" max="100" value="40">
+            <div style="display:flex; gap:4px;">
+                <button class="zen-audio-btn active" data-sound="rain" title="Rain"><i class="fas fa-cloud-rain"></i></button>
+                <button class="zen-audio-btn" data-sound="wheat" title="Wheat Field"><i class="fas fa-wind"></i></button>
+                <button class="zen-audio-btn" data-sound="frogs" title="Summer Frogs"><i class="fas fa-frog"></i></button>
+                <button class="zen-audio-btn" data-sound="fire" title="Fireplace"><i class="fas fa-fire"></i></button>
+            </div>
+        </div>
+        <button class="zen-exit-btn" id="zenExitBtn"><i class="fas fa-compress-alt mr-2"></i><span data-i18n="exitZen"></span></button>
+    </div>
+
+    <!-- Header -->
+    <header class="card p-4 mb-5 animate-fadein-up">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            <div class="flex-1 min-w-[200px]">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-sm">
+                        <i class="fas fa-feather-alt"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5 group cursor-text">
+                            <input type="text" id="dailyThemeInput" class="text-base font-semibold bg-transparent outline-none w-full text-zinc-800 placeholder-zinc-300 border-b border-transparent hover:border-zinc-200 focus:border-indigo-400 transition-colors" value="">
+                            <i class="fas fa-pen text-[0.5rem] text-zinc-300 group-hover:text-indigo-400 transition-colors flex-shrink-0"></i>
+                        </div>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <div class="text-xs text-zinc-400" id="dateDisplay"></div>
+                            <span id="streakBadge" class="streak-badge" style="display:none;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-clock timer-display" id="headerClock">00:00</div>
+            <div class="flex items-center gap-2">
+                <button id="langToggleBtn" class="lang-toggle bg-zinc-50 border border-zinc-200 rounded-md px-2.5 py-1 text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                    <i class="fas fa-globe text-zinc-400"></i> <span id="langLabel">EN</span>
+                </button>
+                <div class="flex items-center gap-1 bg-zinc-50 p-1.5 rounded-lg border border-zinc-200">
+                    <span class="text-xs font-medium text-zinc-400 pl-1.5 hidden sm:inline" data-i18n="mood"></span>
+                    <button class="mood-btn text-xl p-1" data-mood="happy">😊</button>
+                    <button class="mood-btn text-xl p-1" data-mood="calm">😌</button>
+                    <button class="mood-btn text-xl p-1" data-mood="down">😔</button>
+                    <div class="w-px h-5 bg-zinc-200 mx-0.5"></div>
+                    <button id="viewMoodHistoryBtn" class="btn-ghost px-2 py-1 text-xs">
+                        <i class="far fa-calendar-alt mr-1"></i><span data-i18n="diary"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Left Column -->
+        <div class="lg:col-span-2 space-y-5">
+
+            <!-- Unified: Today's Work -->
+            <section class="card p-5 animate-fadein-up stagger-1">
+                <div class="section-title mb-4">
+                    <i class="fas fa-bolt text-indigo-400"></i>
+                    <span data-i18n="workClock"></span>
+                </div>
+
+                <!-- Global work timer panel -->
+                <div id="workPanel" class="work-panel mb-4">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div class="text-center sm:text-left">
+                            <div id="workTimerDisplay" class="work-timer-big timer-display">00:00:00</div>
+                            <div id="workStatusLine" class="text-xs text-zinc-400 mt-1 flex items-center gap-2"></div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="workStartBtn" class="btn-go px-5 py-2.5 text-sm flex items-center gap-2">
+                                <i class="fas fa-play text-xs"></i> <span data-i18n="clockIn"></span>
+                            </button>
+                            <button id="workStopBtn" class="btn-stop px-5 py-2.5 text-sm flex items-center gap-2" disabled>
+                                <i class="fas fa-stop text-xs"></i> <span data-i18n="clockOut"></span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Focusing on indicator -->
+                    <div id="focusingOnBar" class="focusing-on-bar" style="display:none;">
+                        <i class="fas fa-crosshairs text-amber-500 text-sm"></i>
+                        <span class="text-xs font-medium text-amber-700" id="focusingOnLabel"></span>
+                        <span class="timer-display text-xs font-semibold text-amber-600 ml-auto" id="focusingOnTimer">0:00</span>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-zinc-100">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-medium text-zinc-400"><i class="fas fa-hourglass-half text-indigo-400 mr-1"></i><span data-i18n="todayTotal"></span></span>
+                            <span class="text-sm font-semibold text-zinc-700">
+                                <span id="totalWorkMinutes">0</span> <span data-i18n="minUnit"></span>
+                                <span class="text-xs font-normal text-zinc-400">(<span id="totalWorkHours">0.0</span>h)</span>
+                            </span>
+                        </div>
+                        <div id="sessionLogList" class="mt-2 space-y-1 max-h-28 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <!-- Day Phases -->
+                <div class="mb-4">
+                    <div class="text-xs font-semibold text-zinc-500 uppercase tracking-wide flex items-center gap-1.5 mb-2">
+                        <i class="fas fa-sun text-amber-400"></i>
+                        <span data-i18n="dayPhases"></span>
+                    </div>
+                    <div id="dayPhasesBar" class="phase-bar"></div>
+                </div>
+
+                <!-- Task list (unified into the same section) -->
+                <div class="flex flex-wrap justify-between items-center mb-3">
+                    <div class="text-xs font-semibold text-zinc-500 uppercase tracking-wide flex items-center gap-1.5">
+                        <i class="fas fa-list-check text-indigo-400"></i>
+                        <span data-i18n="tasksFocus"></span>
+                    </div>
+                    <button id="viewTaskHistoryBtn" class="btn-ghost px-2 py-1 text-xs">
+                        <i class="fas fa-history mr-1"></i><span data-i18n="history"></span>
+                    </button>
+                </div>
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="newTaskInput" class="input-field flex-1" data-i18n-placeholder="addTaskPlaceholder">
+                    <button id="addTaskBtn" class="btn-primary px-4 py-2 text-sm">
+                        <i class="fas fa-plus mr-1"></i><span data-i18n="add"></span>
+                    </button>
+                </div>
+                <ul id="taskList" class="space-y-2 max-h-[340px] overflow-y-auto pr-1"></ul>
+
+                <div class="mt-3 bg-indigo-50/60 rounded-lg p-3 flex justify-between items-center border border-indigo-100/50">
+                    <span class="text-xs font-medium text-indigo-600"><i class="fas fa-check-double mr-1"></i><span data-i18n="todayFocus"></span></span>
+                    <div>
+                        <span class="text-lg font-bold timer-display text-indigo-600" id="focusTotalToday">0</span>
+                        <span class="text-xs text-indigo-400 ml-0.5" data-i18n="todayDoneUnit"></span>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-zinc-100">
+                    <div class="mb-2">
+                        <h3 class="text-xs font-medium text-zinc-400">
+                            <i class="fas fa-stream text-indigo-400 mr-1"></i><span data-i18n="focusTimeline"></span>
+                        </h3>
+                    </div>
+                    <div id="focusTimelineList" class="pb-4"></div>
+                </div>
+            </section>
+
+            <!-- Flash Notes -->
+            <section class="card p-5 animate-fadein-up stagger-2">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="section-title">
+                        <i class="fas fa-bolt text-amber-400"></i>
+                        <span data-i18n="flashNotes"></span>
+                    </div>
+                    <button id="flashHistoryBtn" class="btn-ghost px-2 py-1 text-xs">
+                        <i class="fas fa-archive mr-1"></i><span data-i18n="flashHistory"></span>
+                    </button>
+                </div>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="flashNoteInput" class="input-field flex-1" data-i18n-placeholder="flashPlaceholder">
+                    <button id="flashNoteAddBtn" class="btn-primary px-4 py-2 text-sm">
+                        <i class="fas fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+                <p class="text-[0.6875rem] text-zinc-300 mb-2" data-i18n="flashHint"></p>
+                <div id="flashNotesList" class="space-y-1.5 max-h-[260px] overflow-y-auto"></div>
+            </section>
+            <!-- Hidden textarea for backwards compat -->
+            <textarea id="inspirationText" class="hidden"></textarea>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-5">
+            <section class="card p-4 animate-slide-right stagger-1">
+                <div class="section-title mb-3">
+                    <i class="fas fa-calendar-alt text-indigo-400"></i>
+                    <span data-i18n="calendar"></span>
+                </div>
+                <div id="calendarContainer" class="mt-1"></div>
+                <p class="text-[0.6875rem] text-center text-zinc-300 mt-2" data-i18n="calendarHint"></p>
+                <div id="calendarDetail" class="mt-2 text-xs bg-zinc-50 p-2.5 rounded-lg text-zinc-500 min-h-[2.5rem]"></div>
+            </section>
+
+            <section class="card p-4 animate-slide-right stagger-2">
+                <div class="section-title mb-3">
+                    <i class="fas fa-chart-bar text-indigo-400"></i>
+                    <span data-i18n="weeklyInsight"></span>
+                </div>
+
+                <!-- 7-day heatmap -->
+                <div class="mb-3">
+                    <div class="text-[0.625rem] text-zinc-400 mb-1.5" data-i18n="last7days"></div>
+                    <div id="weekHeatmap" class="flex gap-1"></div>
+                    <div class="flex justify-between text-[0.5rem] text-zinc-300 mt-1">
+                        <span id="heatmapStart"></span>
+                        <span id="heatmapEnd"></span>
+                    </div>
+                </div>
+
+                <!-- Insight cards -->
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-2.5 border border-amber-100/50">
+                        <div class="text-[0.625rem] text-amber-500/80 mb-0.5"><i class="fas fa-fire mr-0.5"></i><span data-i18n="bestPhase"></span></div>
+                        <div class="text-sm font-bold text-amber-700" id="insightBestPhase">—</div>
+                        <div class="text-[0.5rem] text-amber-400 mt-0.5" id="insightBestPhaseDetail"></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-2.5 border border-emerald-100/50">
+                        <div class="text-[0.625rem] text-emerald-500/80 mb-0.5"><i class="fas fa-check-double mr-0.5"></i><span data-i18n="completionRate"></span></div>
+                        <div class="text-sm font-bold text-emerald-700" id="insightCompletionRate">—</div>
+                        <div class="text-[0.5rem] text-emerald-400 mt-0.5" id="insightCompletionDetail"></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-lg p-2.5 border border-indigo-100/50">
+                        <div class="text-[0.625rem] text-indigo-500/80 mb-0.5"><i class="fas fa-brain mr-0.5"></i><span data-i18n="weeklyFocus"></span></div>
+                        <div class="text-sm font-bold text-indigo-700" id="insightWeeklyFocus">0</div>
+                        <div class="text-[0.5rem] text-indigo-400 mt-0.5" id="insightWeeklyFocusDetail"></div>
+                    </div>
+                    <div class="bg-gradient-to-br from-rose-50 to-pink-50 rounded-lg p-2.5 border border-rose-100/50">
+                        <div class="text-[0.625rem] text-rose-500/80 mb-0.5"><i class="fas fa-calendar-check mr-0.5"></i><span data-i18n="activeDays"></span></div>
+                        <div class="text-sm font-bold text-rose-700" id="insightActiveDays">0/7</div>
+                        <div class="text-[0.5rem] text-rose-400 mt-0.5" id="insightActiveDaysDetail"></div>
+                    </div>
+                </div>
+
+                <!-- Compact export/import/clear -->
+                <div class="flex gap-1.5 mt-2">
+                    <button id="exportDataBtn" class="flex-1 py-1.5 text-[0.625rem] rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-500 transition font-medium"><i class="fas fa-download mr-0.5"></i><span data-i18n="export"></span></button>
+                    <button id="importDataBtn" class="flex-1 py-1.5 text-[0.625rem] rounded-md bg-zinc-100 hover:bg-zinc-200 text-zinc-500 transition font-medium"><i class="fas fa-upload mr-0.5"></i><span data-i18n="import"></span></button>
+                    <button id="clearAllDataBtn" class="flex-1 py-1.5 text-[0.625rem] rounded-md bg-red-50 hover:bg-red-100 text-red-400 transition font-medium"><i class="fas fa-trash-alt mr-0.5"></i><span data-i18n="clearAll"></span></button>
+                </div>
+                <input type="file" id="importFile" accept=".json" class="hidden" />
+            </section>
+
+            <a href="/" class="card p-3 flex items-center justify-center gap-2 text-sm font-medium text-indigo-500 hover:text-indigo-600 transition no-underline block animate-slide-right stagger-3">
+                <i class="fas fa-arrow-left text-xs"></i> <span data-i18n="backHome"></span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="moodModal" class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="bg-white rounded-xl max-w-lg w-full p-5 m-4 max-h-[80vh] overflow-auto shadow-lg modal-content border border-zinc-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-semibold text-zinc-700 flex items-center gap-2">
+                    <i class="fas fa-book-open text-indigo-400"></i>
+                    <span data-i18n="moodDiary"></span>
+                </h3>
+                <button id="closeMoodModal" class="w-7 h-7 rounded-md bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-400 transition text-sm">&times;</button>
+            </div>
+            <div id="moodHistoryList" class="space-y-2"></div>
+        </div>
+    </div>
+    <div id="taskHistoryModal" class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="bg-white rounded-xl max-w-lg w-full p-5 m-4 shadow-lg modal-content border border-zinc-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-semibold text-zinc-700 flex items-center gap-2">
+                    <i class="fas fa-clipboard-check text-indigo-400"></i>
+                    <span data-i18n="completedTasks"></span>
+                </h3>
+                <button id="closeTaskModal" class="w-7 h-7 rounded-md bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-400 transition text-sm">&times;</button>
+            </div>
+            <div id="taskHistoryContent" class="max-h-96 overflow-auto"></div>
+        </div>
+    </div>
+    <div id="flashHistoryModal" class="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 hidden modal-backdrop">
+        <div class="bg-white rounded-xl max-w-lg w-full p-5 m-4 max-h-[80vh] overflow-auto shadow-lg modal-content border border-zinc-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-semibold text-zinc-700 flex items-center gap-2">
+                    <i class="fas fa-archive text-amber-400"></i>
+                    <span data-i18n="flashHistory"></span>
+                </h3>
+                <button id="closeFlashModal" class="w-7 h-7 rounded-md bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-400 transition text-sm">&times;</button>
+            </div>
+            <div id="flashHistoryContent" class="space-y-3"></div>
+        </div>
+    </div>
+
+<script>
+// ======================== I18N ========================
+const I18N = {
+    zh: {
+        mood: "心情", diary: "日记", workClock: "今日专注", morning: "上午", afternoon: "下午",
+        clockIn: "开始专注", clockOut: "结束专注",
+        todayTotal: "今日合计", minUnit: "分钟", tasksFocus: "任务列表",
+        history: "历史", addTaskPlaceholder: "添加新任务...", add: "添加",
+        todayFocus: "今日完成", focusTimeline: "任务时间轴", clear: "清空",
+        todayDoneUnit: "件任务",
+        notes: "笔记 & 反思", notesPlaceholder: "记录灵感、科研心得、每日感悟...",
+        autoSaved: "自动保存", calendar: "日历", calendarHint: "高亮 = 有记录",
+        dashboard: "数据看板", week: "本周", month: "本月", year: "本年",
+        metricTasks: "任务", metricFocus: "专注", metricWorkdays: "打卡",
+        statTasks: "完成任务", statFocus: "专注(分钟)", statWorkdays: "打卡天数",
+        weeklyInsight: "周报摘要", last7days: "近7天活跃度",
+        bestPhase: "最佳时段", completionRate: "完成率",
+        weeklyFocus: "本周专注", activeDays: "活跃天数",
+        avgDaily: "日均 {n} 分钟", totalTasks: "{done}/{total} 任务",
+        daysActive: "{n}/7 天打卡",
+        export: "导出", import: "导入", clearAll: "清空所有数据", backHome: "返回主页",
+        moodDiary: "心情日记", completedTasks: "已完成任务",
+        notStarted: "未开始", working: "工作中", done: "已完成",
+        noRecordToday: "今日未打卡", inProgress: "进行中", recorded: "已记录",
+        noFocusYet: "暂无专注记录，开始一个任务来记录吧",
+        noCompleted: "暂无已完成任务", noMoodEntry: "暂无心情记录",
+        confirmComplete: "完成任务", confirmReset: "重置任务？",
+        confirmDelete: "删除任务", focusing: "专注中",
+        completedCantFocus: "已完成的任务无法专注",
+        addNoteOptional: "添加备注（可选）：", moodRecorded: "已记录心情",
+        clearTimeline: "清空今日专注时间轴？",
+        clearAllConfirm: "永久删除所有数据？不可撤销！", clearAllConfirm2: "再确认一次，数据将全部清空",
+        noWorkRecord: "无工作记录", noMoodRecord: "无心情记录",
+        minWorked: "分钟工作", minFocused: "分钟专注",
+        chartTasks: "完成任务数", chartFocus: "专注时长(分钟)", chartWorkdays: "打卡天数",
+        defaultTheme: "今日科研冲锋",
+        workReady: "准备就绪，随时开始", workingNow: "正在专注",
+        sessionLog: "今日打卡记录", noSessions: "暂无打卡记录",
+        session: "第{n}段", sessionTime: "{start} → {end}",
+        quotes: ["慢慢来，会很快。","今天又是突破边界的一天。","科研如登山，步步风景。","保持好奇，心向璀璨。","一杯咖啡，一篇好文。","灵感来自持续思考。","行动是治愈焦虑的良药。","每一个小进步都值得庆祝。"],
+        weekDays: ['日','一','二','三','四','五','六'],
+        calWeekDays: ['日','一','二','三','四','五','六'],
+        moodNames: { happy: "开心", calm: "平静", down: "低落" },
+        completedAt: "完成于",
+        exitZen: "退出专注",
+        focusBtn: "专注", unfocusBtn: "取消专注",
+        focusingOn: "正在专注：",
+        startWorkFirst: "请先开始专注",
+        generalWork: "通用专注",
+        streak: "连续 {n} 天",
+        flashNotes: "闪念",
+        flashPlaceholder: "记录瞬间的想法...",
+        flashHint: "随时记录奇思妙想~",
+        noFlashNotes: "暂无闪念记录",
+        flashHistory: "闪念归档",
+        dayPhases: "今日时段",
+        phaseMorning: "早起卷王", phaseAfternoon: "午后续命", phaseEvening: "挑灯夜战", phaseLateNight: "修仙时刻",
+        phaseWorked: "{n}分钟", phaseIdle: "—",
+        assignSessions: "分配工作时段", noSessionsToAssign: "还没有工作记录", assignedTime: "已分配 {n} 分钟",
+        phaseChanging: "时段即将切换，自动结束工作",
+    },
+    en: {
+        mood: "Mood", diary: "Diary", workClock: "Today's Focus", morning: "Morning", afternoon: "Afternoon",
+        clockIn: "Start Focus", clockOut: "End Focus",
+        todayTotal: "Today Total", minUnit: "min", tasksFocus: "Tasks",
+        history: "History", addTaskPlaceholder: "Add a new task...", add: "Add",
+        todayFocus: "Completed Today", focusTimeline: "Task Timeline", clear: "Clear",
+        todayDoneUnit: "tasks",
+        notes: "Notes & Reflections", notesPlaceholder: "Capture thoughts, research insights, reflections...",
+        autoSaved: "Auto-saved", calendar: "Calendar", calendarHint: "Highlighted = has records",
+        dashboard: "Dashboard", week: "Week", month: "Month", year: "Year",
+        metricTasks: "Tasks", metricFocus: "Focus", metricWorkdays: "Workdays",
+        statTasks: "Tasks Done", statFocus: "Focus (min)", statWorkdays: "Work Days",
+        weeklyInsight: "Weekly Insights", last7days: "Last 7 Days Activity",
+        bestPhase: "Best Phase", completionRate: "Completion",
+        weeklyFocus: "Weekly Focus", activeDays: "Active Days",
+        avgDaily: "avg {n} min/day", totalTasks: "{done}/{total} tasks",
+        daysActive: "{n}/7 days active",
+        export: "Export", import: "Import", clearAll: "Clear All Data", backHome: "Back to Home",
+        moodDiary: "Mood Diary", completedTasks: "Completed Tasks",
+        notStarted: "Not started", working: "Working", done: "Done",
+        noRecordToday: "No record today", inProgress: "In progress", recorded: "recorded",
+        noFocusYet: "No focus records yet. Start a task to begin.",
+        noCompleted: "No completed tasks yet.", noMoodEntry: "No mood entries yet.",
+        confirmComplete: "Complete task", confirmReset: "Reset task?",
+        confirmDelete: "Delete task", focusing: "Focusing",
+        completedCantFocus: "Completed tasks cannot be focused.",
+        addNoteOptional: "Add a note (optional):", moodRecorded: "Mood recorded",
+        clearTimeline: "Clear today's focus timeline?",
+        clearAllConfirm: "Permanently delete ALL data? This cannot be undone.",
+        clearAllConfirm2: "Are you sure? Last chance.",
+        noWorkRecord: "No work record", noMoodRecord: "No mood record",
+        minWorked: "min worked", minFocused: "min focused",
+        chartTasks: "Tasks Completed", chartFocus: "Focus (min)", chartWorkdays: "Work Days",
+        defaultTheme: "Today's Focus",
+        workReady: "Ready to go", workingNow: "Focusing",
+        sessionLog: "Today's sessions", noSessions: "No sessions yet",
+        session: "Session {n}", sessionTime: "{start} → {end}",
+        quotes: ["Slow and steady wins the race.","Another day of pushing boundaries.","Research is like climbing — every step reveals a new view.","Stay curious, stay brilliant.","A cup of coffee, a great paper.","Inspiration comes from persistent thinking.","Action is the antidote to anxiety.","Every small step forward counts."],
+        weekDays: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+        calWeekDays: ['Su','Mo','Tu','We','Th','Fr','Sa'],
+        moodNames: { happy: "Happy", calm: "Calm", down: "Down" },
+        completedAt: "Completed at",
+        exitZen: "Exit Focus",
+        focusBtn: "Focus", unfocusBtn: "Unfocus",
+        focusingOn: "Focusing on:",
+        startWorkFirst: "Start focus first",
+        generalWork: "General Focus",
+        streak: "{n} day streak",
+        flashNotes: "Quick Notes",
+        flashPlaceholder: "Capture a thought...",
+        flashHint: "Jot down ideas anytime",
+        noFlashNotes: "No notes yet",
+        flashHistory: "Notes Archive",
+        dayPhases: "Day Phases",
+        phaseMorning: "Early Grinder", phaseAfternoon: "Afternoon Recharge", phaseEvening: "Night Owl", phaseLateNight: "Ascension Mode",
+        phaseWorked: "{n} min", phaseIdle: "—",
+        assignSessions: "Assign work sessions", noSessionsToAssign: "No sessions yet", assignedTime: "{n} min assigned",
+        phaseChanging: "Phase changing, auto-stopping work",
+    }
+};
+let currentLang = localStorage.getItem('diary_lang') || 'zh';
+function t(key) { return I18N[currentLang][key] || I18N['en'][key] || key; }
+
+function applyI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-placeholder')); });
+    document.querySelectorAll('.mood-btn').forEach(btn => { btn.title = t('moodNames')[btn.getAttribute('data-mood')] || ''; });
+    document.getElementById('langLabel').textContent = currentLang === 'zh' ? 'EN' : '中文';
+    updateDateDisplay();
+    updateWorkUI();
+    renderTasks(); renderFocusTimeline(); renderCalendar(); updateWeeklyInsights();
+    updateStreakDisplay(); renderFlashNotes(); renderDayPhases();
+}
+
+function toggleLang() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    localStorage.setItem('diary_lang', currentLang);
+    applyI18n();
+}
+
+function updateDateDisplay() {
+    const now = new Date();
+    if (currentLang === 'zh') {
+        document.getElementById("dateDisplay").textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 周${t('weekDays')[now.getDay()]}`;
+    } else {
+        document.getElementById("dateDisplay").textContent = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + ' · ' + t('weekDays')[now.getDay()];
+    }
+}
+
+// ======================== STORAGE ========================
+const SP = "master_";
+const STORAGE = {
+    tasks: SP+"tasks_v7", workRecords: SP+"work_records_v8",
+    dailyMoods: SP+"mood_entries", dailyInspiration: SP+"inspiration",
+    dailyFocus: SP+"focus_records", dailyTheme: SP+"theme",
+    focusTimeline: SP+"focus_timeline_v7", completedTasksHistory: SP+"completed_history_v7",
+    activeFocusTaskId: SP+"active_focus_task_id",
+    activeFocusStartTs: SP+"active_focus_start_ts",
+    flashNotes: SP+"flash_notes"
+};
+let tasks=[], workMap=new Map(), moodEntries=[], inspirationMap=new Map(), focusMap=new Map(), focusTimeline=[], completedHistory=[];
+let flashNotes = [];
+
+// Active focus state: which task is currently focused while the global work timer runs
+let activeFocusTaskId = null;
+let activeFocusStartTs = null;
+
+function toLocalDateStr(d) { const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+function getTodayStr() { return toLocalDateStr(new Date()); }
+function getNowDateTimeStr() { return new Date().toLocaleString('zh-CN'); }
+function getNowTimeStr() { return new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+
+function saveAll() {
+    localStorage.setItem(STORAGE.tasks, JSON.stringify(tasks));
+    localStorage.setItem(STORAGE.workRecords, JSON.stringify([...workMap.entries()]));
+    localStorage.setItem(STORAGE.dailyMoods, JSON.stringify(moodEntries));
+    localStorage.setItem(STORAGE.dailyInspiration, JSON.stringify([...inspirationMap.entries()]));
+    localStorage.setItem(STORAGE.dailyFocus, JSON.stringify([...focusMap.entries()]));
+    localStorage.setItem(STORAGE.dailyTheme, document.getElementById("dailyThemeInput").value);
+    localStorage.setItem(STORAGE.focusTimeline, JSON.stringify(focusTimeline));
+    localStorage.setItem(STORAGE.completedTasksHistory, JSON.stringify(completedHistory));
+    localStorage.setItem(STORAGE.flashNotes, JSON.stringify(flashNotes));
+    // Persist active focus state
+    if (activeFocusTaskId !== null) {
+        localStorage.setItem(STORAGE.activeFocusTaskId, activeFocusTaskId);
+        localStorage.setItem(STORAGE.activeFocusStartTs, String(activeFocusStartTs));
+    } else {
+        localStorage.removeItem(STORAGE.activeFocusTaskId);
+        localStorage.removeItem(STORAGE.activeFocusStartTs);
+    }
+}
+function loadAll() {
+    const tv=localStorage.getItem(STORAGE.tasks); tasks=tv?JSON.parse(tv):[];
+    const w=localStorage.getItem(STORAGE.workRecords); workMap=w?new Map(JSON.parse(w)):new Map();
+    const m=localStorage.getItem(STORAGE.dailyMoods); moodEntries=m?JSON.parse(m):[];
+    const ins=localStorage.getItem(STORAGE.dailyInspiration); inspirationMap=ins?new Map(JSON.parse(ins)):new Map();
+    const foc=localStorage.getItem(STORAGE.dailyFocus); focusMap=foc?new Map(JSON.parse(foc)):new Map();
+    const tl=localStorage.getItem(STORAGE.focusTimeline); focusTimeline=tl?JSON.parse(tl):[];
+    const ch=localStorage.getItem(STORAGE.completedTasksHistory); completedHistory=ch?JSON.parse(ch):[];
+    const fn=localStorage.getItem(STORAGE.flashNotes); flashNotes=fn?JSON.parse(fn):[];
+    document.getElementById("dailyThemeInput").value = localStorage.getItem(STORAGE.dailyTheme) || t('defaultTheme');
+    // Restore active focus state
+    const storedFocusId = localStorage.getItem(STORAGE.activeFocusTaskId);
+    const storedFocusTs = localStorage.getItem(STORAGE.activeFocusStartTs);
+    if (storedFocusId && storedFocusTs) {
+        activeFocusTaskId = parseFloat(storedFocusId);
+        activeFocusStartTs = parseInt(storedFocusTs, 10);
+    } else {
+        activeFocusTaskId = null;
+        activeFocusStartTs = null;
+    }
+}
+function formatSecs(sec) { let m=Math.floor(sec/60),s=sec%60; return `${m}:${s<10?'0'+s:s}`; }
+function formatHMS(ms) {
+    const s=Math.floor(ms/1000), h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+    return `${h<10?'0'+h:h}:${m<10?'0'+m:m}:${sec<10?'0'+sec:sec}`;
+}
+
+// ======================== HELPERS ========================
+function isWorking() {
+    const rec = getTodayWork();
+    return !!rec.currentStart;
+}
+
+function getActiveFocusTask() {
+    if (activeFocusTaskId === null) return null;
+    return tasks.find(tk => tk.id === activeFocusTaskId) || null;
+}
+
+// ======================== UNIFIED WORK CLOCK ========================
+let workLiveTimer = null;
+
+function getTodayWork() {
+    let rec = workMap.get(getTodayStr());
+    if (!rec) { rec = { sessions: [], currentStart: null, totalMinutes: 0 }; workMap.set(getTodayStr(), rec); }
+    if (!rec.sessions) rec.sessions = [];
+    return rec;
+}
+
+function workStartClick() {
+    const rec = getTodayWork();
+    if (rec.currentStart) return;
+    rec.currentStart = Date.now();
+    rec.currentPhase = getCurrentPhaseKey();
+    saveAll();
+    startWorkLiveTimer();
+    updateWorkUI();
+    renderDayPhases();
+    enterZenMode();
+}
+
+function workStopClick() {
+    const rec = getTodayWork();
+    if (!rec.currentStart) return;
+    // Stop any active focus first
+    stopActiveFocus();
+    const elapsed = Math.floor((Date.now() - rec.currentStart) / 60000);
+    const startTime = new Date(rec.currentStart).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+    const endTime = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+    rec.sessions.push({ start: startTime, end: endTime, duration: elapsed, startTs: rec.currentStart, endTs: Date.now() });
+    rec.totalMinutes = rec.sessions.reduce((sum, s) => sum + s.duration, 0);
+    rec.currentStart = null;
+    saveAll();
+    stopWorkLiveTimer();
+    updateWorkUI();
+    updateStatsAndCalendar();
+    // Exit zen mode since work stopped
+    exitZenMode();
+}
+
+function startWorkLiveTimer() {
+    stopWorkLiveTimer();
+    let tickCount = 0;
+    workLiveTimer = setInterval(() => {
+        updateWorkUI();
+        tickActiveFocus();
+        checkPhaseChange();
+        // Update timeline every 30s to show growing current session block
+        if (++tickCount % 30 === 0) renderFocusTimeline();
+    }, 1000);
+}
+
+function checkPhaseChange() {
+    const rec = getTodayWork();
+    if (!rec.currentStart || !rec.currentPhase) return;
+    const now = getCurrentPhaseKey();
+    if (now !== rec.currentPhase) {
+        workStopClick();
+    }
+}
+function stopWorkLiveTimer() {
+    if (workLiveTimer) { clearInterval(workLiveTimer); workLiveTimer = null; }
+}
+
+function updateWorkUI() {
+    const rec = getTodayWork();
+    const working = !!rec.currentStart;
+    const panel = document.getElementById('workPanel');
+    const timerEl = document.getElementById('workTimerDisplay');
+    const statusEl = document.getElementById('workStatusLine');
+    const startBtn = document.getElementById('workStartBtn');
+    const stopBtn = document.getElementById('workStopBtn');
+
+    let runningMs = 0;
+    if (working) runningMs = Date.now() - rec.currentStart;
+    const sessionMs = rec.sessions.reduce((sum, s) => sum + s.duration * 60000, 0);
+    const totalMs = sessionMs + runningMs;
+    timerEl.textContent = formatHMS(totalMs);
+
+    if (working) {
+        panel.classList.add('is-working');
+        timerEl.classList.add('is-running');
+        statusEl.innerHTML = `<span class="pulse-dot"></span> <span class="text-emerald-600 font-medium text-xs">${t('workingNow')}</span>`;
+        startBtn.disabled = true; stopBtn.disabled = false;
+    } else {
+        panel.classList.remove('is-working');
+        timerEl.classList.remove('is-running');
+        statusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-zinc-300 inline-block"></span> <span class="text-xs">${t('workReady')}</span>`;
+        startBtn.disabled = false; stopBtn.disabled = true;
+    }
+
+    const totalMin = Math.floor(totalMs / 60000);
+    document.getElementById("totalWorkMinutes").textContent = totalMin;
+    document.getElementById("totalWorkHours").textContent = (totalMin / 60).toFixed(1);
+
+    // Focusing-on bar
+    const focusingBar = document.getElementById('focusingOnBar');
+    const focusingLabel = document.getElementById('focusingOnLabel');
+    const focusingTimer = document.getElementById('focusingOnTimer');
+    const focusTask = getActiveFocusTask();
+    if (working && focusTask) {
+        focusingBar.style.display = 'flex';
+        focusingLabel.textContent = `${t('focusingOn')} ${focusTask.text}`;
+        focusingTimer.textContent = formatSecs(focusTask.focusSecs || 0);
+    } else {
+        focusingBar.style.display = 'none';
+    }
+
+    const logEl = document.getElementById('sessionLogList');
+    if (rec.sessions.length === 0) {
+        logEl.innerHTML = `<div class="text-xs text-zinc-300 text-center py-1">${t('noSessions')}</div>`;
+    } else {
+        // Build session-owner map for display
+        const sessOwners = {};
+        tasks.forEach(tk => {
+            if (tk.assignedSessions) tk.assignedSessions.forEach(si => { sessOwners[si] = tk; });
+        });
+        logEl.innerHTML = rec.sessions.map((s, i) => {
+            const owner = sessOwners[i];
+            const ownerColor = owner ? getTaskColor(owner.id) : '#6b7280';
+            const ownerName = owner ? owner.text : t('generalWork');
+            return `
+            <div class="session-log-item flex items-center gap-2 text-xs bg-zinc-50 rounded-md px-2.5 py-1.5 border border-zinc-100" style="animation-delay:${i*0.05}s">
+                <span style="width:6px;height:6px;border-radius:2px;background:${ownerColor};flex-shrink:0;"></span>
+                <span class="font-medium text-zinc-600 flex-1 truncate" title="${ownerName}">${ownerName}</span>
+                <span class="text-zinc-400 timer-display flex-shrink-0">${s.start} → ${s.end}</span>
+                <span class="badge bg-indigo-50 text-indigo-500 flex-shrink-0">${s.duration}${t('minUnit')}</span>
+            </div>`;
+        }).join('');
+    }
+}
+
+// ======================== FOCUS (linked to work timer) ========================
+function addTimelineRecord(taskId, taskName, startDT, endDT, durSec) {
+    focusTimeline.push({ id: Date.now()+Math.random(), taskId, taskName, startTime: startDT, endTime: endDT, durationSec: durSec, dateStr: getTodayStr() });
+    saveAll(); renderFocusTimeline();
+}
+function updateFocusTodayUI() {
+    const today = getTodayStr();
+    const doneCount = tasks.filter(tk => tk.status === 'done' && tk.completedDate === today).length;
+    document.getElementById("focusTotalToday").innerText = doneCount;
+}
+
+const TASK_COLORS = ['#6366f1','#f59e0b','#10b981','#ef4444','#8b5cf6','#ec4899','#14b8a6','#f97316','#06b6d4','#84cc16'];
+function getTaskColor(taskId) {
+    const idx = tasks.findIndex(tk => tk.id === taskId);
+    return TASK_COLORS[idx >= 0 ? idx % TASK_COLORS.length : 0];
+}
+
+function renderFocusTimeline() {
+    const c = document.getElementById("focusTimelineList"); if (!c) return;
+    const today = getTodayStr();
+    const rec = workMap.get(today);
+    const sessions = (rec && rec.sessions) ? rec.sessions : [];
+
+    // Build session-owner map from task assignments
+    const sessionOwners = {};
+    tasks.forEach(tk => {
+        if (tk.assignedSessions) {
+            tk.assignedSessions.forEach(si => { sessionOwners[si] = tk; });
+        }
+    });
+
+    // Build blocks from sessions — use actual duration, clamp to today
+    const blocks = [];
+    const nowDate = new Date();
+    const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
+    const todayStart = new Date(nowDate); todayStart.setHours(0,0,0,0);
+    const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
+
+    sessions.forEach((s, si) => {
+        if (!s.startTs || !s.endTs) return;
+        // Clamp session to today's boundaries
+        const clampedStart = Math.max(s.startTs, todayStart.getTime());
+        const clampedEnd = Math.min(s.endTs, todayEnd.getTime());
+        if (clampedStart >= clampedEnd) return; // session not in today
+        const st = new Date(clampedStart), en = new Date(clampedEnd);
+        const startMin = st.getHours() * 60 + st.getMinutes();
+        const endMin = en.getHours() * 60 + en.getMinutes() || 1440; // midnight = 1440
+        const owner = sessionOwners[si];
+        if (owner) {
+            blocks.push({ startMin, endMin, color: getTaskColor(owner.id), label: owner.text, type: 'task' });
+        } else {
+            blocks.push({ startMin, endMin, color: '#6b7280', label: t('generalWork'), type: 'general' });
+        }
+    });
+
+    // Currently running session — from start to right now
+    if (rec && rec.currentStart) {
+        const clampedStart = Math.max(rec.currentStart, todayStart.getTime());
+        const st = new Date(clampedStart);
+        const startMin = st.getHours() * 60 + st.getMinutes();
+        blocks.push({ startMin, endMin: nowMin, color: '#6b7280', label: t('generalWork'), type: 'general', active: true });
+    }
+
+    // Phase definitions for 4-segment layout
+    const phases = [
+        { key: 'morning',   startH: 6,  endH: 12, css: 'phase-morning',   dark: false, label: t('phaseMorning') },
+        { key: 'afternoon', startH: 12, endH: 18, css: 'phase-afternoon', dark: false, label: t('phaseAfternoon') },
+        { key: 'evening',   startH: 18, endH: 23, css: 'phase-evening',   dark: false, label: t('phaseEvening') },
+        { key: 'latenight', startH: 23, endH: 6,  css: 'phase-latenight', dark: true,  label: t('phaseLateNight') },
+    ];
+
+    // Render 4-segment timeline
+    const phaseHtml = phases.map(p => {
+        const phaseStartMin = p.startH * 60;
+        let phaseEndMin = p.endH * 60;
+        const spansMidnight = p.startH >= p.endH;
+        if (spansMidnight) phaseEndMin = p.endH * 60 + 1440; // e.g., 23*60 to 6*60+1440
+        const phaseDuration = spansMidnight ? (24 - p.startH + p.endH) * 60 : (p.endH - p.startH) * 60;
+        const textCls = p.dark ? 'dark' : 'light';
+
+        // Filter blocks that overlap this phase
+        let segBlocksHtml = '';
+        blocks.forEach(b => {
+            let bStart = b.startMin, bEnd = b.endMin;
+            // Calculate overlap with this phase
+            let overlapStart, overlapEnd;
+            if (spansMidnight) {
+                // Phase 23:00-06:00 — check two ranges: 23:00-24:00 and 0:00-6:00
+                const r1Start = p.startH * 60, r1End = 1440;
+                const r2Start = 0, r2End = p.endH * 60;
+                // Normalize block for overnight
+                const bStartNorm = bStart, bEndNorm = bEnd > 1440 ? bEnd : bEnd;
+
+                let os1 = Math.max(bStartNorm, r1Start), oe1 = Math.min(bEndNorm, r1End);
+                let os2 = Math.max(bStartNorm, r2Start), oe2 = Math.min(bEndNorm, r2End);
+                // Also handle block wrapping: e.g., block 23:30-01:30 → part1: 23:30-24:00, part2: 0:00-1:30
+                if (bEnd > 1440) {
+                    os2 = Math.max(0, r2Start);
+                    oe2 = Math.min(bEnd - 1440, r2End);
+                }
+
+                // Render part in first range (23:00-24:00)
+                if (os1 < oe1) {
+                    const left = ((os1 - r1Start) / phaseDuration) * 100;
+                    const width = ((oe1 - os1) / phaseDuration) * 100;
+                    const opacity = b.type === 'general' ? '0.65' : '0.9';
+                    const pulse = b.active ? 'animation:focusPulse 2s infinite;' : '';
+                    segBlocksHtml += `<div class="timeline-phase-block" style="left:${left}%;width:${width}%;background:${b.color};opacity:${opacity};${pulse}" title="${b.label}"></div>`;
+                }
+                // Render part in second range (0:00-6:00)
+                if (os2 < oe2 && oe2 > 0) {
+                    const offset = (24 - p.startH) * 60; // minutes from phase start to midnight
+                    const left = ((offset + os2) / phaseDuration) * 100;
+                    const width = ((oe2 - os2) / phaseDuration) * 100;
+                    const opacity = b.type === 'general' ? '0.65' : '0.9';
+                    segBlocksHtml += `<div class="timeline-phase-block" style="left:${left}%;width:${width}%;background:${b.color};opacity:${opacity}" title="${b.label}"></div>`;
+                }
+            } else {
+                overlapStart = Math.max(bStart, phaseStartMin);
+                overlapEnd = Math.min(bEnd, phaseEndMin);
+                if (overlapStart < overlapEnd) {
+                    const left = ((overlapStart - phaseStartMin) / phaseDuration) * 100;
+                    const width = ((overlapEnd - overlapStart) / phaseDuration) * 100;
+                    const opacity = b.type === 'general' ? '0.65' : '0.9';
+                    const pulse = b.active ? 'animation:focusPulse 2s infinite;' : '';
+                    segBlocksHtml += `<div class="timeline-phase-block" style="left:${left}%;width:${width}%;background:${b.color};opacity:${opacity};${pulse}" title="${b.label}"></div>`;
+                }
+            }
+        });
+
+        // Now-line within this phase
+        const nowDate = new Date();
+        const nowMin = nowDate.getHours() * 60 + nowDate.getMinutes();
+        const nowTimeStr = String(nowDate.getHours()).padStart(2,'0') + ':' + String(nowDate.getMinutes()).padStart(2,'0');
+        let nowHtml = '', nowLabelHtml = '';
+        const nowLine = (pos) => { nowLabelHtml = `<div class="timeline-phase-now-label" style="left:${pos}%;bottom:100%;margin-bottom:2px;">${nowTimeStr}</div>`; return `<div class="timeline-phase-now" style="left:${pos}%"></div>`; };
+        if (spansMidnight) {
+            if (nowMin >= p.startH * 60) {
+                nowHtml = nowLine(((nowMin - p.startH * 60) / phaseDuration) * 100);
+            } else if (nowMin < p.endH * 60) {
+                const offset = (24 - p.startH) * 60;
+                nowHtml = nowLine(((offset + nowMin) / phaseDuration) * 100);
+            }
+        } else {
+            if (nowMin >= phaseStartMin && nowMin < phaseEndMin) {
+                nowHtml = nowLine(((nowMin - phaseStartMin) / phaseDuration) * 100);
+            }
+        }
+
+        const sh = String(p.startH).padStart(2,'0'), eh = String(p.endH).padStart(2,'0');
+        return `<div class="timeline-phase-wrapper">
+            ${nowLabelHtml}
+            <div class="timeline-phase-segment ${p.css}">
+                ${segBlocksHtml}${nowHtml}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.55rem;margin-top:2px;padding:0 2px;color:var(--text-tertiary);">
+                <span>${sh}:00</span>
+                <span style="font-size:0.5rem;font-weight:500;opacity:0.8">${p.label}</span>
+                <span>${eh}:00</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Legend
+    const seen = new Set();
+    const legendItems = [];
+    blocks.filter(b => b.type === 'task').forEach(b => {
+        if (!seen.has(b.label)) {
+            seen.add(b.label);
+            legendItems.push(`<div class="timeline-legend-item"><div class="timeline-legend-dot" style="background:${b.color}"></div>${b.label}</div>`);
+        }
+    });
+    if (blocks.some(b => b.type === 'general')) {
+        legendItems.unshift(`<div class="timeline-legend-item"><div class="timeline-legend-dot" style="background:#6b7280"></div>${t('generalWork')}</div>`);
+    }
+
+    c.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+            ${phaseHtml}
+        </div>
+        ${legendItems.length ? `<div class="timeline-legend">${legendItems.join('')}</div>` : ''}
+    `;
+}
+
+// Called every second by the work live timer
+function tickActiveFocus() {
+    if (!isWorking()) return;
+    if (activeFocusTaskId === null) return;
+    const task = getActiveFocusTask();
+    if (!task || task.status === 'done') {
+        stopActiveFocus();
+        return;
+    }
+    task.focusSecs = (task.focusSecs || 0) + 1;
+    // No need to saveAll every second (heavy), save every 10 seconds
+    if (task.focusSecs % 10 === 0) saveAll();
+}
+
+function startFocusOnTask(taskId) {
+    if (!isWorking()) return;
+    const task = tasks.find(tk => tk.id === taskId);
+    if (!task || task.status === 'done') return;
+    // If already focusing on this task, unfocus it
+    if (activeFocusTaskId === taskId) {
+        stopActiveFocus();
+        renderTasks();
+        updateZenTaskDisplay();
+        return;
+    }
+    // Stop previous focus if any
+    stopActiveFocus();
+    // Start new focus
+    activeFocusTaskId = taskId;
+    activeFocusStartTs = Date.now();
+    task._focusSecsAtStart = task.focusSecs || 0;
+    saveAll();
+    renderTasks();
+    updateZenTaskDisplay();
+}
+
+function stopActiveFocus() {
+    if (activeFocusTaskId === null) return;
+    const task = getActiveFocusTask();
+    if (task && activeFocusStartTs) {
+        const secsAtStart = task._focusSecsAtStart !== undefined ? task._focusSecsAtStart : (task.focusSecs || 0);
+        const added = (task.focusSecs || 0) - secsAtStart;
+        if (added > 0) {
+            let tf = focusMap.get(getTodayStr()) || 0;
+            tf += Math.floor(added / 60);
+            focusMap.set(getTodayStr(), tf);
+            const startDT = new Date(activeFocusStartTs).toLocaleString('zh-CN');
+            addTimelineRecord(task.id, task.text, startDT, getNowDateTimeStr(), added);
+        }
+        delete task._focusSecsAtStart;
+    }
+    activeFocusTaskId = null;
+    activeFocusStartTs = null;
+    saveAll();
+    updateFocusTodayUI();
+    updateStatsAndCalendar();
+    updateZenTaskDisplay();
+}
+
+function updateZenTaskDisplay() {
+    const taskNameEl = document.getElementById('zenTaskName');
+    const labelEl = document.getElementById('zenTimerLabel');
+    const focusTask = getActiveFocusTask();
+    if (focusTask) {
+        taskNameEl.innerHTML = `<i class="fas fa-crosshairs"></i>${focusTask.text}`;
+        taskNameEl.style.display = 'block';
+        labelEl.textContent = t('focusing');
+    } else {
+        taskNameEl.style.display = 'none';
+        labelEl.textContent = t('workingNow');
+    }
+}
+
+// ======================== RENDER TASKS ========================
+function getTaskAssignedMinutes(task) {
+    if (!task.assignedSessions || !task.assignedSessions.length) return 0;
+    const rec = workMap.get(getTodayStr());
+    if (!rec || !rec.sessions) return 0;
+    return task.assignedSessions.reduce((sum, si) => {
+        const s = rec.sessions[si];
+        return sum + (s ? s.duration : 0);
+    }, 0);
+}
+
+function showSessionPicker(taskId, anchorEl) {
+    // Remove any existing picker
+    document.querySelectorAll('.session-picker-overlay').forEach(el => el.remove());
+
+    const task = tasks.find(tk => tk.id === taskId);
+    if (!task) return;
+    if (!task.assignedSessions) task.assignedSessions = [];
+
+    const rec = workMap.get(getTodayStr());
+    const sessions = (rec && rec.sessions) ? rec.sessions : [];
+
+    // Create overlay to catch outside clicks
+    const overlay = document.createElement('div');
+    overlay.className = 'session-picker-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:50;';
+    overlay.onclick = () => overlay.remove();
+
+    // Create picker
+    const picker = document.createElement('div');
+    picker.className = 'session-picker';
+    picker.style.cssText = 'position:fixed; z-index:51; min-width:220px;';
+    picker.onclick = (e) => e.stopPropagation();
+
+    // Title
+    const title = document.createElement('div');
+    title.className = 'text-xs font-semibold text-zinc-500 px-1 pb-1.5 mb-1 border-b border-zinc-100';
+    title.innerHTML = `<i class="fas fa-clock mr-1"></i>${t('assignSessions')}`;
+    picker.appendChild(title);
+
+    // Build a map: sessionIndex -> owning task (for exclusive assignment)
+    const sessionOwners = {};
+    tasks.forEach(tk => {
+        if (tk.assignedSessions) {
+            tk.assignedSessions.forEach(si => { sessionOwners[si] = tk; });
+        }
+    });
+
+    if (sessions.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'text-xs text-zinc-400 text-center py-3';
+        empty.textContent = t('noSessionsToAssign');
+        picker.appendChild(empty);
+    } else {
+        sessions.forEach((s, si) => {
+            const checked = task.assignedSessions.includes(si);
+            const owner = sessionOwners[si];
+            const takenByOther = owner && owner.id !== task.id;
+
+            const item = document.createElement('label');
+            item.className = 'session-picker-item';
+            if (takenByOther) item.style.opacity = '0.5';
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = checked;
+            cb.disabled = takenByOther;
+            if (!takenByOther) {
+                cb.onchange = () => {
+                    const idx = task.assignedSessions.indexOf(si);
+                    if (idx >= 0) task.assignedSessions.splice(idx, 1);
+                    else task.assignedSessions.push(si);
+                    saveAll();
+                    renderTasks();
+                    renderFocusTimeline();
+                };
+            }
+            const info = document.createElement('span');
+            info.className = 'session-info';
+            if (takenByOther) {
+                info.innerHTML = `<i class="fas fa-lock text-[5px] text-zinc-400 mr-1"></i>${s.start} → ${s.end} <span style="color:var(--text-tertiary);font-size:0.65rem;margin-left:4px;">(${owner.text})</span>`;
+            } else {
+                info.innerHTML = `<i class="fas fa-circle text-[5px] text-indigo-300 mr-1"></i>${s.start} → ${s.end}`;
+            }
+            const dur = document.createElement('span');
+            dur.className = 'session-dur';
+            dur.textContent = `${s.duration} ${t('minUnit')}`;
+            item.append(cb, info, dur);
+            picker.appendChild(item);
+        });
+    }
+
+    // Position the picker near the button
+    const rect = anchorEl.getBoundingClientRect();
+    document.body.appendChild(overlay);
+    document.body.appendChild(picker);
+    const pickerH = picker.offsetHeight;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < pickerH + 8) {
+        picker.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+    } else {
+        picker.style.top = (rect.bottom + 4) + 'px';
+    }
+    picker.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+
+    // Close when clicking overlay
+    overlay.onclick = () => { overlay.remove(); picker.remove(); };
+}
+
+function renderTasks() {
+    const c = document.getElementById("taskList"); if (!c) return;
+    const today = getTodayStr();
+    const list = tasks.filter(tk => tk.status !== "done" || tk.completedDate === today);
+    const working = isWorking();
+    const rec = workMap.get(today);
+    const sessions = (rec && rec.sessions) ? rec.sessions : [];
+    c.innerHTML = "";
+    list.forEach((task, idx) => {
+        const isFocused = (activeFocusTaskId === task.id) && working;
+        const li = document.createElement("li");
+        li.className = `task-item ${isFocused?'focusing':''} ${task.status==='done'?'task-completed':''}`;
+        li.style.cssText = `animation-delay:${idx * 0.04}s; position:relative;`;
+
+        // Row 1: main task row
+        const row = document.createElement("div");
+        row.className = "flex items-center gap-2.5";
+
+        // Complete toggle button (checkmark)
+        const completeBtn = document.createElement("button");
+        const isDone = task.status === 'done';
+        completeBtn.className = `btn-complete ${isDone ? 'is-done' : ''}`;
+        completeBtn.innerHTML = `<i class="fas fa-check"></i>`;
+        completeBtn.title = isDone ? t('confirmReset') : t('confirmComplete');
+        completeBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (!isDone) {
+                if (activeFocusTaskId === task.id) stopActiveFocus();
+                task.status = "done"; task.completedDate = getTodayStr(); task.completedTimeStr = getNowDateTimeStr();
+                completedHistory.push({ taskId:task.id, taskName:task.text, completedDate:getTodayStr(), completedTimeStr:getNowDateTimeStr() });
+            } else {
+                task.status = "todo"; delete task.completedDate; delete task.completedTimeStr;
+            }
+            saveAll(); renderTasks(); updateStatsAndCalendar();
+        };
+
+        // Task text
+        const taskText = document.createElement("span");
+        taskText.innerText = task.text;
+        taskText.className = "task-text flex-1 font-medium text-sm text-zinc-700 break-words";
+
+        // Assigned time display
+        const assignedMins = getTaskAssignedMinutes(task);
+
+        // Clock button (assign sessions) — with text label
+        const clockBtn = document.createElement("button");
+        clockBtn.className = `btn-clock ${assignedMins > 0 ? 'has-sessions' : ''}`;
+        const clockLabel = assignedMins > 0
+            ? `<i class="fas fa-clock"></i> ${assignedMins}${t('minUnit')}`
+            : `<i class="fas fa-clock"></i> ${currentLang === 'zh' ? '分配时段' : 'Assign'}`;
+        clockBtn.innerHTML = clockLabel;
+        clockBtn.onclick = (e) => { e.stopPropagation(); showSessionPicker(task.id, clockBtn); };
+
+        // Delete button
+        const delBtn = document.createElement("button");
+        delBtn.innerHTML = '<i class="fas fa-times text-[0.6rem]"></i>';
+        delBtn.className = "w-6 h-6 rounded flex items-center justify-center text-zinc-300 hover:text-red-400 hover:bg-red-50 transition flex-shrink-0";
+        delBtn.onclick = () => {
+            if (confirm(`${t('confirmDelete')} "${task.text}"?`)) {
+                if (activeFocusTaskId === task.id) stopActiveFocus();
+                tasks = tasks.filter(x => x.id !== task.id);
+                saveAll(); renderTasks(); updateStatsAndCalendar(); renderFocusTimeline();
+            }
+        };
+
+        row.append(completeBtn, taskText, clockBtn);
+        row.append(delBtn);
+        li.appendChild(row);
+
+        c.appendChild(li);
+    });
+    updateFocusTodayUI(); renderFocusTimeline();
+}
+
+// ======================== MOOD ========================
+function recordMood(mood) {
+    const today = getTodayStr(), timeStr = new Date().toLocaleTimeString('zh-CN');
+    const moodName = t('moodNames')[mood] || mood;
+    const note = prompt(t('addNoteOptional'), moodName);
+    moodEntries.push({ dateStr: today, mood, note: note||"", timestamp: Date.now(), exactTime: timeStr });
+    saveAll();
+    const quotes = t('quotes');
+    alert(`${quotes[Math.floor(Math.random()*quotes.length)]}\n\n${t('moodRecorded')}: ${moodName} (${timeStr})`);
+}
+
+// ======================== CALENDAR ========================
+function renderCalendar() {
+    const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    const fd = new Date(y,m,1).getDay(), dim = new Date(y,m+1,0).getDate(), todayStr = getTodayStr();
+    const wd = t('calWeekDays');
+    let html = `<div class="grid grid-cols-7 gap-0.5 text-center mb-1.5">`;
+    wd.forEach(d => { html += `<div class="text-[0.625rem] font-medium text-zinc-400 py-0.5">${d}</div>`; });
+    html += `</div><div class="grid grid-cols-7 gap-0.5">`;
+    for (let i=0;i<fd;i++) html += `<div></div>`;
+    for (let d=1;d<=dim;d++) {
+        const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const hw = workMap.has(ds) && (workMap.get(ds).totalMinutes > 0);
+        html += `<div class="cal-day ${hw?'has-record':'bg-white'} ${ds===todayStr?'is-today':''}" data-date="${ds}">${d}</div>`;
+    }
+    html += `</div>`;
+    document.getElementById("calendarContainer").innerHTML = html;
+    document.querySelectorAll(".cal-day").forEach(el => el.addEventListener("click", () => showDayDetail(el.dataset.date)));
+}
+function showDayDetail(ds) {
+    const w = workMap.get(ds), ws = w ? `${w.totalMinutes||0} ${t('minWorked')}` : t('noWorkRecord');
+    const mr = moodEntries.filter(m=>m.dateStr===ds).slice(-1)[0];
+    const mn = mr ? (t('moodNames')[mr.mood]||mr.mood) : '';
+    const ms = mr ? `${mn} ${mr.note||''} (${mr.exactTime||''})` : t('noMoodRecord');
+    const fm = focusMap.get(ds) || 0;
+    document.getElementById("calendarDetail").innerHTML = `
+        <div class="font-medium text-zinc-600 mb-1">${ds}</div>
+        <div class="space-y-0.5 text-zinc-500">
+            <div><i class="fas fa-clock text-indigo-400 mr-1"></i>${ws}</div>
+            <div><i class="fas fa-heart text-indigo-300 mr-1"></i>${ms}</div>
+            <div><i class="fas fa-brain text-indigo-400 mr-1"></i>${fm} ${t('minFocused')}</div>
+        </div>`;
+}
+
+// ======================== WEEKLY INSIGHTS ========================
+let currentPeriod = "week";
+function getLast7Dates() {
+    const dates = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        dates.push(toLocalDateStr(d));
+    }
+    return dates;
+}
+function updateWeeklyInsights() {
+    const dates = getLast7Dates();
+    const heatmapEl = document.getElementById('weekHeatmap');
+    const calWeekDays = t('calWeekDays') || ['日','一','二','三','四','五','六'];
+
+    // Compute daily focus minutes for last 7 days
+    const dailyFocus = dates.map(d => focusMap.get(d) || 0);
+    const maxFocus = Math.max(...dailyFocus, 1);
+
+    // Render heatmap bars
+    heatmapEl.innerHTML = dates.map((d, i) => {
+        const mins = dailyFocus[i];
+        const pct = Math.max(mins / maxFocus * 100, mins > 0 ? 8 : 0);
+        const dayOfWeek = new Date(d + 'T12:00:00').getDay();
+        const dayLabel = calWeekDays[dayOfWeek];
+        const opacity = mins > 0 ? Math.max(0.25, mins / maxFocus) : 0.06;
+        const isToday = d === getTodayStr();
+        return `<div class="flex-1 flex flex-col items-center gap-0.5">
+            <div class="w-full rounded-sm relative" style="height:36px;background:rgba(99,102,241,${opacity * 0.15})">
+                <div class="absolute bottom-0 w-full rounded-sm transition-all" style="height:${pct}%;background:rgba(99,102,241,${opacity});"></div>
+            </div>
+            <span class="text-[0.5rem] ${isToday ? 'text-indigo-500 font-bold' : 'text-zinc-400'}">${dayLabel}</span>
+            ${mins > 0 ? `<span class="text-[0.45rem] text-zinc-300">${mins}'</span>` : ''}
+        </div>`;
+    }).join('');
+
+    // Date range labels
+    document.getElementById('heatmapStart').textContent = dates[0].slice(5);
+    document.getElementById('heatmapEnd').textContent = dates[6].slice(5);
+
+    // Best phase: compute focus per phase across last 7 days using focusTimeline
+    const phaseRanges = [
+        { key: 'phaseMorning', start: 6, end: 12 },
+        { key: 'phaseAfternoon', start: 12, end: 18 },
+        { key: 'phaseEvening', start: 18, end: 23 },
+        { key: 'phaseLateNight', start: 23, end: 30 } // 23-06 wraps
+    ];
+    const phaseMinutes = [0, 0, 0, 0];
+    const last7Start = new Date(dates[0] + 'T00:00:00').getTime();
+    const last7End = new Date(dates[6] + 'T23:59:59').getTime();
+    focusTimeline.forEach(s => {
+        if (!s.endTs) return;
+        const start = Math.max(s.startTs, last7Start);
+        const end = Math.min(s.endTs, last7End);
+        if (start >= end) return;
+        // Distribute minutes to phases based on hour
+        const sDate = new Date(start);
+        const eDate = new Date(end);
+        const sHour = sDate.getHours() + sDate.getMinutes() / 60;
+        const eHour = sHour + (end - start) / 3600000;
+        phaseRanges.forEach((pr, idx) => {
+            const pStart = pr.start;
+            const pEnd = pr.end;
+            const overlapStart = Math.max(sHour, pStart);
+            const overlapEnd = Math.min(eHour, pEnd);
+            if (overlapStart < overlapEnd) {
+                phaseMinutes[idx] += Math.round((overlapEnd - overlapStart) * 60);
+            }
+        });
+    });
+    const bestPhaseIdx = phaseMinutes.indexOf(Math.max(...phaseMinutes));
+    const bestPhaseMins = phaseMinutes[bestPhaseIdx];
+    const bestPhaseEl = document.getElementById('insightBestPhase');
+    const bestPhaseDetailEl = document.getElementById('insightBestPhaseDetail');
+    if (bestPhaseMins > 0) {
+        bestPhaseEl.textContent = t(phaseRanges[bestPhaseIdx].key);
+        bestPhaseDetailEl.textContent = bestPhaseMins + ' ' + t('minUnit');
+    } else {
+        bestPhaseEl.textContent = '—';
+        bestPhaseDetailEl.textContent = '';
+    }
+
+    // Completion rate: all-time tasks created vs completed
+    const totalCreated = tasks.length + completedHistory.length;
+    const totalDone = completedHistory.length + tasks.filter(tk => tk.completed).length;
+    const rateEl = document.getElementById('insightCompletionRate');
+    const rateDetailEl = document.getElementById('insightCompletionDetail');
+    if (totalCreated > 0) {
+        rateEl.textContent = Math.round(totalDone / totalCreated * 100) + '%';
+        rateDetailEl.textContent = t('totalTasks').replace('{done}', totalDone).replace('{total}', totalCreated);
+    } else {
+        rateEl.textContent = '—';
+        rateDetailEl.textContent = '';
+    }
+
+    // Weekly focus total
+    const weekTotal = dailyFocus.reduce((a, b) => a + b, 0);
+    const avgDaily = dailyFocus.filter(d => d > 0).length > 0 ? Math.round(weekTotal / 7) : 0;
+    document.getElementById('insightWeeklyFocus').textContent = weekTotal + ' ' + t('minUnit');
+    document.getElementById('insightWeeklyFocusDetail').textContent = t('avgDaily').replace('{n}', avgDaily);
+
+    // Active days
+    const activeDayCount = dailyFocus.filter(d => d > 0).length;
+    document.getElementById('insightActiveDays').textContent = activeDayCount + '/7';
+    document.getElementById('insightActiveDaysDetail').textContent = t('daysActive').replace('{n}', activeDayCount);
+}
+function updateStatsAndCalendar(p=currentPeriod) { currentPeriod=p; updateWeeklyInsights(); renderCalendar(); updateStreakDisplay(); renderDayPhases(); }
+
+// ======================== MODALS ========================
+function showTaskHistory() {
+    const s=[...completedHistory].reverse();
+    document.getElementById("taskHistoryContent").innerHTML = !s.length ? `<div class="text-center text-zinc-400 py-4 text-sm">${t('noCompleted')}</div>` :
+        '<div class="space-y-1.5">'+s.map((h,i)=>`<div class="flex items-start gap-2.5 p-2.5 bg-zinc-50 rounded-lg animate-fadein-up" style="animation-delay:${i*0.03}s"><i class="fas fa-check-circle text-emerald-500 mt-0.5 text-sm"></i><div><div class="font-medium text-sm text-zinc-700">${h.taskName}</div><div class="text-xs text-zinc-400 mt-0.5">${t('completedAt')} ${h.completedTimeStr}</div></div></div>`).join('')+'</div>';
+    document.getElementById("taskHistoryModal").classList.remove("hidden");
+}
+function showMoodHistory() {
+    const e=moodEntries.slice().reverse(), em={happy:'😊',calm:'😌',down:'😔'};
+    document.getElementById("moodHistoryList").innerHTML = !e.length ? `<div class="text-center text-zinc-400 py-4 text-sm">${t('noMoodEntry')}</div>` :
+        e.map((m,i)=>`<div class="flex items-start gap-2.5 p-2.5 bg-zinc-50 rounded-lg animate-fadein-up" style="animation-delay:${i*0.03}s"><span class="text-lg">${em[m.mood]||'😊'}</span><div><div class="font-medium text-sm text-zinc-700">${m.dateStr} <span class="text-zinc-400 font-normal">${m.exactTime||''}</span></div>${m.note?`<div class="text-xs text-zinc-500 mt-0.5">${m.note}</div>`:''}</div></div>`).join('');
+    document.getElementById("moodModal").classList.remove("hidden");
+}
+
+// ======================== EXPORT/IMPORT ========================
+function exportData() {
+    const d={tasks,workMap:[...workMap.entries()],moodEntries,inspirationMap:[...inspirationMap.entries()],focusMap:[...focusMap.entries()],focusTimeline,completedHistory,flashNotes};
+    const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=`diary_backup_${getTodayStr()}.json`; a.click();
+}
+function importData(f) {
+    const r=new FileReader(); r.onload=e=>{const d=JSON.parse(e.target.result);tasks=d.tasks||[];workMap=new Map(d.workMap||[]);moodEntries=d.moodEntries||[];inspirationMap=new Map(d.inspirationMap||[]);focusMap=new Map(d.focusMap||[]);focusTimeline=d.focusTimeline||[];completedHistory=d.completedHistory||[];flashNotes=d.flashNotes||[];saveAll();location.reload();}; if(f) r.readAsText(f);
+}
+
+// ======================== AMBIENT SOUND ENGINE ========================
+let audioCtx = null;
+let ambientNodes = [];
+let ambientIntervals = [];
+let ambientGain = null;
+let currentSound = 'rain';
+let audioMuted = false;
+
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    ambientGain = audioCtx.createGain();
+    ambientGain.gain.value = 0.4;
+    ambientGain.connect(audioCtx.destination);
+}
+
+function makeNoise(seconds) {
+    const sr = audioCtx.sampleRate, len = sr * seconds;
+    const buf = audioCtx.createBuffer(2, len, sr);
+    for (let ch = 0; ch < 2; ch++) {
+        const d = buf.getChannelData(ch);
+        let last = 0;
+        for (let i = 0; i < len; i++) {
+            const w = Math.random() * 2 - 1;
+            last = (last + 0.02 * w) / 1.02;
+            d[i] = last * 3.5;
+        }
+    }
+    return buf;
+}
+
+function makeWhiteNoise(seconds) {
+    const sr = audioCtx.sampleRate, buf = audioCtx.createBuffer(2, sr * seconds, sr);
+    for (let ch = 0; ch < 2; ch++) {
+        const d = buf.getChannelData(ch);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return buf;
+}
+
+function noiseSrc(buf) {
+    const s = audioCtx.createBufferSource();
+    s.buffer = buf; s.loop = true; s.start();
+    ambientNodes.push(s);
+    return s;
+}
+function lfo(freq, amount, target) {
+    const o = audioCtx.createOscillator();
+    o.type = 'sine'; o.frequency.value = freq;
+    const g = audioCtx.createGain(); g.gain.value = amount;
+    o.connect(g).connect(target);
+    o.start(); ambientNodes.push(o);
+    return o;
+}
+function filt(type, freq, q) {
+    const f = audioCtx.createBiquadFilter();
+    f.type = type; f.frequency.value = freq; if (q) f.Q.value = q;
+    return f;
+}
+function gn(v) {
+    const g = audioCtx.createGain(); g.gain.value = v;
+    return g;
+}
+
+function startSound(type) {
+    stopAllSounds();
+    if (!audioCtx) initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    currentSound = type;
+
+    const brown = makeNoise(6);
+    const white = makeWhiteNoise(4);
+
+    if (type === 'rain') {
+        const s1 = noiseSrc(brown);
+        const f1 = filt('bandpass', 1200, 0.4);
+        const g1 = gn(0.45);
+        s1.connect(f1).connect(g1).connect(ambientGain);
+
+        const s2 = noiseSrc(white);
+        const f2a = filt('highpass', 2500);
+        const f2b = filt('lowpass', 8000);
+        const g2 = gn(0.08);
+        const lfo2 = lfo(0.15, 0.03, g2.gain);
+        s2.connect(f2a).connect(f2b).connect(g2).connect(ambientGain);
+
+        const s3 = noiseSrc(brown);
+        const f3 = filt('lowpass', 120);
+        const g3 = gn(0.2);
+        const lfo3 = lfo(0.04, 0.12, g3.gain);
+        s3.connect(f3).connect(g3).connect(ambientGain);
+
+        const s4 = noiseSrc(white);
+        const f4 = filt('bandpass', 4000, 2);
+        const g4 = gn(0.04);
+        const lfo4 = lfo(0.25, 0.03, g4.gain);
+        s4.connect(f4).connect(g4).connect(ambientGain);
+
+        const s5 = noiseSrc(brown);
+        const f5 = filt('bandpass', 600, 0.8);
+        const g5 = gn(0.15);
+        s5.connect(f5).connect(g5).connect(ambientGain);
+    }
+    else if (type === 'wheat') {
+        const s1 = noiseSrc(brown);
+        const f1 = filt('lowpass', 400);
+        const g1 = gn(0.3);
+        const lfo1 = lfo(0.035, 0.15, g1.gain);
+        s1.connect(f1).connect(g1).connect(ambientGain);
+
+        const s2 = noiseSrc(white);
+        const f2a = filt('bandpass', 1800, 0.6);
+        const f2b = filt('bandpass', 2400, 0.5);
+        const g2 = gn(0.06);
+        const lfo2a = lfo(0.07, 0.04, g2.gain);
+        lfo(0.05, 400, f2a.frequency);
+        s2.connect(f2a).connect(f2b).connect(g2).connect(ambientGain);
+
+        const s3 = noiseSrc(white);
+        const f3 = filt('bandpass', 5000, 1.5);
+        const g3 = gn(0.015);
+        const lfo3 = lfo(0.09, 0.01, g3.gain);
+        lfo(0.04, 1500, f3.frequency);
+        s3.connect(f3).connect(g3).connect(ambientGain);
+
+        const s4 = noiseSrc(brown);
+        const f4 = filt('lowpass', 200);
+        const g4 = gn(0.12);
+        s4.connect(f4).connect(g4).connect(ambientGain);
+
+        const s5 = noiseSrc(brown);
+        const f5 = filt('bandpass', 700, 0.3);
+        const g5 = gn(0.08);
+        lfo(0.02, 0.06, g5.gain);
+        lfo(0.025, 300, f5.frequency);
+        s5.connect(f5).connect(g5).connect(ambientGain);
+    }
+    else if (type === 'frogs') {
+        const s1 = noiseSrc(brown);
+        const f1 = filt('lowpass', 250);
+        const g1 = gn(0.18);
+        s1.connect(f1).connect(g1).connect(ambientGain);
+
+        [4100, 4600, 5200].forEach(freq => {
+            const o = audioCtx.createOscillator();
+            o.type = 'sine'; o.frequency.value = freq + Math.random() * 300;
+            const trem = audioCtx.createOscillator();
+            trem.type = 'square'; trem.frequency.value = 12 + Math.random() * 10;
+            const tremG = gn(0.008 + Math.random() * 0.005);
+            const outG = gn(0);
+            trem.connect(tremG); tremG.connect(outG.gain);
+            o.connect(outG).connect(ambientGain);
+            o.start(); trem.start();
+            ambientNodes.push(o, trem);
+        });
+
+        const frogConfigs = [
+            { freq: 420, dur: 0.12, interval: [1.5, 3.5], vol: 0.06 },
+            { freq: 280, dur: 0.25, interval: [2.0, 5.0], vol: 0.05 },
+            { freq: 180, dur: 0.4,  interval: [3.0, 8.0], vol: 0.04 },
+            { freq: 520, dur: 0.08, interval: [0.8, 2.0], vol: 0.04 },
+            { freq: 350, dur: 0.18, interval: [2.5, 6.0], vol: 0.045 },
+        ];
+
+        frogConfigs.forEach(cfg => {
+            function chirp() {
+                if (!audioCtx || audioCtx.state === 'closed') return;
+                const now = audioCtx.currentTime;
+                const o = audioCtx.createOscillator();
+                o.type = 'sine';
+                o.frequency.setValueAtTime(cfg.freq * (1 + Math.random() * 0.1), now);
+                o.frequency.exponentialRampToValueAtTime(cfg.freq * 0.7, now + cfg.dur);
+
+                const env = audioCtx.createGain();
+                env.gain.setValueAtTime(0, now);
+                env.gain.linearRampToValueAtTime(cfg.vol, now + cfg.dur * 0.1);
+                env.gain.setValueAtTime(cfg.vol, now + cfg.dur * 0.6);
+                env.gain.exponentialRampToValueAtTime(0.001, now + cfg.dur);
+
+                o.connect(env).connect(ambientGain);
+                o.start(now);
+                o.stop(now + cfg.dur + 0.05);
+
+                if (Math.random() < 0.4) {
+                    const o2 = audioCtx.createOscillator();
+                    o2.type = 'sine';
+                    const t2 = now + cfg.dur + 0.06;
+                    o2.frequency.setValueAtTime(cfg.freq * (1 + Math.random() * 0.08), t2);
+                    o2.frequency.exponentialRampToValueAtTime(cfg.freq * 0.72, t2 + cfg.dur * 0.9);
+                    const env2 = audioCtx.createGain();
+                    env2.gain.setValueAtTime(0, t2);
+                    env2.gain.linearRampToValueAtTime(cfg.vol * 0.8, t2 + cfg.dur * 0.1);
+                    env2.gain.exponentialRampToValueAtTime(0.001, t2 + cfg.dur * 0.9);
+                    o2.connect(env2).connect(ambientGain);
+                    o2.start(t2);
+                    o2.stop(t2 + cfg.dur + 0.05);
+                }
+
+                const next = cfg.interval[0] + Math.random() * (cfg.interval[1] - cfg.interval[0]);
+                const tid = setTimeout(chirp, next * 1000);
+                ambientIntervals.push(tid);
+            }
+            const startDelay = Math.random() * 3000;
+            const tid = setTimeout(chirp, startDelay);
+            ambientIntervals.push(tid);
+        });
+
+        const s4 = noiseSrc(brown);
+        const f4a = filt('bandpass', 800, 0.5);
+        const g4 = gn(0.03);
+        const lfo4 = lfo(0.1, 0.015, g4.gain);
+        s4.connect(f4a).connect(g4).connect(ambientGain);
+    }
+    else if (type === 'fire') {
+        const s1 = noiseSrc(brown);
+        const f1 = filt('lowpass', 300);
+        const g1 = gn(0.28);
+        const lfo1 = lfo(0.06, 0.08, g1.gain);
+        s1.connect(f1).connect(g1).connect(ambientGain);
+
+        const s2 = noiseSrc(white);
+        const f2 = filt('bandpass', 2000, 1.2);
+        const g2 = gn(0.04);
+        const lfo2 = lfo(0.3, 0.025, g2.gain);
+        s2.connect(f2).connect(g2).connect(ambientGain);
+
+        const s3 = noiseSrc(white);
+        const f3 = filt('bandpass', 5000, 1.5);
+        const g3 = gn(0.015);
+        lfo(0.08, 0.01, g3.gain);
+        lfo(0.05, 1500, f3.frequency);
+        s3.connect(f3).connect(g3).connect(ambientGain);
+
+        function pop() {
+            if (!audioCtx || audioCtx.state === 'closed') return;
+            const now = audioCtx.currentTime;
+            const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.06, audioCtx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.15));
+            const src = audioCtx.createBufferSource();
+            src.buffer = buf;
+            const f = filt('bandpass', 800 + Math.random() * 3000, 1 + Math.random() * 3);
+            const env = gn(0.05 + Math.random() * 0.08);
+            src.connect(f).connect(env).connect(ambientGain);
+            src.start(now);
+
+            if (Math.random() < 0.3) {
+                const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.04, audioCtx.sampleRate);
+                const d2 = buf2.getChannelData(0);
+                for (let i = 0; i < d2.length; i++) d2[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d2.length * 0.1));
+                const src2 = audioCtx.createBufferSource();
+                src2.buffer = buf2;
+                const f2 = filt('bandpass', 1500 + Math.random() * 2000, 2);
+                const env2 = gn(0.04 + Math.random() * 0.06);
+                src2.connect(f2).connect(env2).connect(ambientGain);
+                src2.start(now + 0.05 + Math.random() * 0.08);
+            }
+
+            const next = 0.15 + Math.random() * 0.8;
+            const tid = setTimeout(pop, next * 1000);
+            ambientIntervals.push(tid);
+        }
+        const startTid = setTimeout(pop, 300);
+        ambientIntervals.push(startTid);
+
+        function knock() {
+            if (!audioCtx || audioCtx.state === 'closed') return;
+            const now = audioCtx.currentTime;
+            const o = audioCtx.createOscillator();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(150 + Math.random() * 100, now);
+            o.frequency.exponentialRampToValueAtTime(60, now + 0.15);
+            const env = gn(0);
+            env.gain.setValueAtTime(0, now);
+            env.gain.linearRampToValueAtTime(0.06, now + 0.01);
+            env.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            o.connect(env).connect(ambientGain);
+            o.start(now); o.stop(now + 0.2);
+            const next = 2 + Math.random() * 6;
+            const tid = setTimeout(knock, next * 1000);
+            ambientIntervals.push(tid);
+        }
+        const knockTid = setTimeout(knock, 1500 + Math.random() * 3000);
+        ambientIntervals.push(knockTid);
+    }
+}
+
+function stopAllSounds() {
+    ambientNodes.forEach(n => { try { n.stop(); } catch(e) { try { n.disconnect(); } catch(e2){} } });
+    ambientNodes = [];
+    ambientIntervals.forEach(id => clearTimeout(id));
+    ambientIntervals = [];
+}
+
+function setAudioVolume(v) {
+    if (ambientGain) ambientGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.1);
+}
+
+function toggleMute() {
+    audioMuted = !audioMuted;
+    const btn = document.getElementById('zenMuteBtn');
+    if (audioMuted) {
+        setAudioVolume(0);
+        btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+        btn.classList.add('muted');
+    } else {
+        setAudioVolume(document.getElementById('zenVolume').value / 100);
+        btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+        btn.classList.remove('muted');
+    }
+}
+
+function initAudioControls() {
+    document.getElementById('zenMuteBtn').onclick = toggleMute;
+    document.getElementById('zenVolume').oninput = (e) => {
+        if (!audioMuted) setAudioVolume(e.target.value / 100);
+    };
+    document.querySelectorAll('[data-sound]').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('[data-sound]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            startSound(btn.dataset.sound);
+            if (!audioMuted) setAudioVolume(document.getElementById('zenVolume').value / 100);
+        };
+    });
+}
+
+// ======================== CLOCK & ZEN MODE ========================
+let headerClockInterval = null;
+let zenClockInterval = null;
+
+function updateHeaderClock() {
+    const now = new Date();
+    const el = document.getElementById('headerClock');
+    if (el) el.textContent = [now.getHours(), now.getMinutes(), now.getSeconds()].map(v => String(v).padStart(2,'0')).join(':');
+}
+function startHeaderClock() { updateHeaderClock(); headerClockInterval = setInterval(updateHeaderClock, 1000); }
+
+function getTimePhase(hour, minute) {
+    const t = hour + minute / 60;
+    if (t >= 5 && t < 7) return 'dawn';
+    if (t >= 7 && t < 11) return 'morning';
+    if (t >= 11 && t < 14) return 'noon';
+    if (t >= 14 && t < 17) return 'afternoon';
+    if (t >= 17 && t < 19.5) return 'sunset';
+    if (t >= 19.5 && t < 21) return 'dusk';
+    return 'night';
+}
+
+const SKY_THEMES = {
+    dawn:      { bg: 'linear-gradient(180deg, #2d1b69 0%, #764ba2 25%, #f093fb 50%, #f5af19 75%, #ffecd2 100%)',
+                 mt: ['#3d2b5a','#4a3568','#5e4080','#6b4d8e'], text: 'rgba(255,255,255,0.85)' },
+    morning:   { bg: 'linear-gradient(180deg, #56CCF2 0%, #89CFF0 30%, #B6E0F0 60%, #E8F4FD 100%)',
+                 mt: ['#5B8A72','#4A7A64','#6B9E80','#3D6B56'], text: 'rgba(30,50,80,0.8)' },
+    noon:      { bg: 'linear-gradient(180deg, #2196F3 0%, #64B5F6 30%, #90CAF9 60%, #BBDEFB 100%)',
+                 mt: ['#4E8B5E','#3D7A4E','#5E9B6E','#2D6B3E'], text: 'rgba(30,50,80,0.75)' },
+    afternoon: { bg: 'linear-gradient(180deg, #4A90D9 0%, #7BB3E0 30%, #A8CCE8 60%, #D4E6F1 100%)',
+                 mt: ['#5E7B5E','#4D6A4D','#6E8B6E','#3D5A3D'], text: 'rgba(40,50,70,0.8)' },
+    sunset:    { bg: 'linear-gradient(180deg, #2D3561 0%, #C33764 25%, #F77062 50%, #FE8C00 75%, #FFE259 100%)',
+                 mt: ['#2D1F3D','#3D2B50','#4E3660','#5F4170'], text: 'rgba(255,255,255,0.9)' },
+    dusk:      { bg: 'linear-gradient(180deg, #0F0C29 0%, #302B63 30%, #544E80 50%, #24243e 100%)',
+                 mt: ['#1a1530','#221e3d','#2b264a','#191430'], text: 'rgba(255,255,255,0.85)' },
+    night:     { bg: 'linear-gradient(180deg, #0a0a1a 0%, #0d1025 20%, #141832 40%, #1a1e3e 70%, #0f1020 100%)',
+                 mt: ['#0c0c1e','#10102a','#141436','#0a0a18'], text: 'rgba(255,255,255,0.8)' },
+};
+
+function celestialPos(currentT, riseT, setT) {
+    let span = setT - riseT;
+    if (span < 0) span += 24;
+    let elapsed = currentT - riseT;
+    if (elapsed < 0) elapsed += 24;
+    const progress = Math.max(0, Math.min(1, elapsed / span));
+    const x = 10 + progress * 80;
+    const arcHeight = Math.sin(progress * Math.PI);
+    const y = 8 + arcHeight * 55;
+    return { x, y, progress };
+}
+
+function generateStars() {
+    const c = document.getElementById('zenStars'); if (!c) return;
+    c.innerHTML = '';
+    for (let i = 0; i < 100; i++) {
+        const s = document.createElement('div');
+        s.className = 'zen-star';
+        s.style.left = Math.random() * 100 + '%';
+        s.style.top = Math.random() * 65 + '%';
+        const dur = 2 + Math.random() * 5;
+        const delay = Math.random() * 6;
+        s.style.setProperty('--tw-dur', dur + 's');
+        s.style.setProperty('--tw-delay', delay + 's');
+        const size = 1 + Math.random() * 2.5;
+        s.style.width = size + 'px';
+        s.style.height = size + 'px';
+        c.appendChild(s);
+    }
+}
+
+function updateZenScene() {
+    const now = new Date();
+    const hour = now.getHours(), min = now.getMinutes();
+    const tNow = hour + min / 60;
+    const phase = getTimePhase(hour, min);
+    const theme = SKY_THEMES[phase];
+
+    document.getElementById('zenBg').style.background = theme.bg;
+
+    const mts = document.querySelectorAll('.zen-mountain');
+    theme.mt.forEach((c, i) => { if (mts[i]) mts[i].style.borderBottomColor = c; });
+
+    const starsEl = document.getElementById('zenStars');
+    starsEl.style.opacity = phase === 'night' ? '1' : phase === 'dusk' ? '0.7' : phase === 'dawn' ? '0.3' : '0';
+
+    const cloudsEl = document.getElementById('zenClouds');
+    const isDaytime = ['morning','noon','afternoon'].includes(phase);
+    cloudsEl.style.opacity = isDaytime ? '1' : phase === 'dawn' || phase === 'sunset' ? '0.4' : '0';
+
+    const fogEl = document.getElementById('zenFog');
+    fogEl.style.opacity = (phase === 'dawn' || phase === 'dusk') ? '1' : isDaytime ? '0.3' : '0.5';
+
+    const sunEl = document.getElementById('zenSun');
+    const sunRise = 6, sunSet = 18.5;
+    const sunVisible = tNow >= sunRise && tNow <= sunSet;
+    if (sunVisible) {
+        const sp = celestialPos(tNow, sunRise, sunSet);
+        sunEl.style.left = sp.x + '%';
+        sunEl.style.bottom = sp.y + '%';
+        sunEl.style.opacity = '1';
+        sunEl.style.transform = 'translate(-50%, 50%)';
+        const horizonProx = 1 - Math.sin(sp.progress * Math.PI);
+        sunEl.style.boxShadow = `0 0 ${60 + horizonProx * 40}px ${20 + horizonProx * 30}px rgba(251,191,36,${0.3 + horizonProx * 0.3})`;
+    } else {
+        sunEl.style.opacity = '0';
+    }
+
+    const moonEl = document.getElementById('zenMoon');
+    const moonRise = 18.5, moonSet = 6;
+    const moonVisible = tNow >= moonRise || tNow <= moonSet;
+    if (moonVisible) {
+        const mp = celestialPos(tNow, moonRise, moonSet);
+        moonEl.style.left = mp.x + '%';
+        moonEl.style.bottom = mp.y + '%';
+        moonEl.style.opacity = '1';
+        moonEl.style.transform = 'translate(-50%, 50%)';
+    } else {
+        moonEl.style.opacity = '0';
+    }
+
+    const clockEl = document.getElementById('zenClock');
+    const dateEl = document.getElementById('zenDate');
+    if (clockEl) clockEl.style.color = theme.text;
+    if (dateEl) clockEl.style.textShadow = isDaytime ? '0 2px 20px rgba(0,0,0,0.1)' : '0 2px 40px rgba(0,0,0,0.3)';
+}
+
+function updateZenClock() {
+    const now = new Date();
+    const zenCl = document.getElementById('zenClock');
+    if (zenCl) zenCl.textContent = [now.getHours(), now.getMinutes(), now.getSeconds()].map(v => String(v).padStart(2,'0')).join(':');
+
+    const zenDt = document.getElementById('zenDate');
+    if (zenDt) {
+        zenDt.textContent = currentLang === 'zh'
+            ? `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 周${t('weekDays')[now.getDay()]}`
+            : now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    // Phase label in zen mode
+    const phaseLabel = document.getElementById('zenPhaseLabel');
+    if (phaseLabel) {
+        const phaseKey = getCurrentPhaseKey();
+        const phaseObj = DAY_PHASES.find(p => p.key === phaseKey);
+        if (phaseObj) phaseLabel.textContent = `${phaseObj.icon} ${t(phaseObj.i18n)}`;
+    }
+
+    const zenWt = document.getElementById('zenWorkTimer');
+    const focusTask = getActiveFocusTask();
+    if (focusTask) {
+        if (zenWt) zenWt.textContent = formatSecs(focusTask.focusSecs || 0);
+    } else {
+        const rec = getTodayWork();
+        if (rec.currentStart) {
+            const runMs = Date.now() - rec.currentStart;
+            const sessMs = rec.sessions.reduce((s, x) => s + x.duration * 60000, 0);
+            if (zenWt) zenWt.textContent = formatHMS(sessMs + runMs);
+        }
+    }
+
+    updateZenScene();
+}
+
+let zenActive = false;
+
+function enterZenMode() {
+    zenActive = true;
+    generateStars();
+    updateZenScene();
+    document.getElementById('zenOverlay').classList.add('active');
+    const quotes = t('quotes');
+    document.getElementById('zenQuote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+    updateZenTaskDisplay();
+
+    updateZenClock();
+    if (zenClockInterval) clearInterval(zenClockInterval);
+    zenClockInterval = setInterval(updateZenClock, 1000);
+    document.body.style.overflow = 'hidden';
+    initAudio();
+    startSound(currentSound);
+    if (!audioMuted) setAudioVolume(document.getElementById('zenVolume').value / 100);
+}
+
+function exitZenMode() {
+    document.getElementById('zenOverlay').classList.remove('active');
+    if (zenClockInterval) { clearInterval(zenClockInterval); zenClockInterval = null; }
+    document.body.style.overflow = '';
+    zenActive = false;
+    stopAllSounds();
+}
+
+// ======================== STREAK ========================
+function calculateStreak() {
+    let streak = 0;
+    const today = new Date();
+    const todayStr = getTodayStr();
+    const todayHasWork = workMap.has(todayStr) && (workMap.get(todayStr).totalMinutes > 0 || workMap.get(todayStr).currentStart);
+    let checkDate = new Date(today);
+    if (!todayHasWork) {
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+    while (true) {
+        const ds = toLocalDateStr(checkDate);
+        const rec = workMap.get(ds);
+        if (rec && rec.totalMinutes > 0) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+    if (todayHasWork && streak === 0) streak = 0; // currentStart but no totalMinutes yet counts visually
+    return streak;
+}
+
+function updateStreakDisplay() {
+    const badge = document.getElementById('streakBadge');
+    const streak = calculateStreak();
+    if (streak > 0) {
+        badge.style.display = 'inline-flex';
+        badge.textContent = '\uD83D\uDD25 ' + t('streak').replace('{n}', streak);
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ======================== FLASH NOTES ========================
+function addFlashNote() {
+    const input = document.getElementById('flashNoteInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const now = new Date();
+    const note = {
+        id: Date.now() + Math.random(),
+        text: text,
+        dateStr: getTodayStr(),
+        time: now.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'}),
+        createdAt: now.toISOString()
+    };
+    flashNotes.push(note);
+    saveAll();
+    input.value = '';
+    renderFlashNotes();
+}
+
+function deleteFlashNote(id) {
+    flashNotes = flashNotes.filter(n => n.id !== id);
+    saveAll();
+    renderFlashNotes();
+}
+
+function renderFlashNotes() {
+    const container = document.getElementById('flashNotesList');
+    if (!container) return;
+    const todayNotes = flashNotes.filter(n => n.dateStr === getTodayStr()).sort((a, b) => b.id - a.id);
+    if (!todayNotes.length) {
+        container.innerHTML = `<div class="text-center text-zinc-300 py-3 text-xs">${t('noFlashNotes')}</div>`;
+        return;
+    }
+    container.innerHTML = todayNotes.map((n, i) => `
+        <div class="flash-note-item" style="animation-delay:${i * 0.04}s">
+            <span class="flash-time">${n.time}</span>
+            <span class="flash-text">${escapeHtml(n.text)}</span>
+            <span class="flash-del" onclick="deleteFlashNote(${n.id})" title="Delete"><i class="fas fa-times"></i></span>
+        </div>
+    `).join('');
+}
+
+function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function showFlashHistory() {
+    const grouped = {};
+    flashNotes.forEach(n => {
+        if (!grouped[n.dateStr]) grouped[n.dateStr] = [];
+        grouped[n.dateStr].push(n);
+    });
+    const dates = Object.keys(grouped).sort().reverse();
+    const container = document.getElementById('flashHistoryContent');
+    if (!dates.length) {
+        container.innerHTML = `<div class="text-center text-zinc-400 py-4 text-sm">${t('noFlashNotes')}</div>`;
+    } else {
+        container.innerHTML = dates.map(date => {
+            const notes = grouped[date].sort((a, b) => b.id - a.id);
+            return `
+                <div class="mb-2">
+                    <div class="text-xs font-semibold text-zinc-500 mb-1.5 flex items-center gap-1.5">
+                        <i class="fas fa-calendar-day text-indigo-300"></i> ${date}
+                        <span class="text-zinc-300 font-normal">(${notes.length})</span>
+                    </div>
+                    <div class="space-y-1">
+                        ${notes.map(n => `
+                            <div class="flex items-start gap-2 text-xs p-2 bg-zinc-50 rounded-md">
+                                <span class="text-zinc-400 flex-shrink-0" style="font-variant-numeric:tabular-nums">${n.time}</span>
+                                <span class="text-zinc-600">${escapeHtml(n.text)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+    document.getElementById('flashHistoryModal').classList.remove('hidden');
+}
+
+// ======================== DAY PHASES ========================
+const DAY_PHASES = [
+    { key: 'morning',   icon: '💪', i18n: 'phaseMorning',   startH: 6,  endH: 12 },
+    { key: 'afternoon', icon: '☕', i18n: 'phaseAfternoon', startH: 12, endH: 18 },
+    { key: 'evening',   icon: '🔥', i18n: 'phaseEvening',   startH: 18, endH: 23 },
+    { key: 'latenight', icon: '🧘', i18n: 'phaseLateNight', startH: 23, endH: 6  },
+];
+
+function getPhaseMinutes(phase, rec) {
+    if (!rec || !rec.sessions || !rec.sessions.length) return 0;
+    let total = 0;
+    rec.sessions.forEach(s => {
+        if (!s.startTs || !s.endTs) return;
+        const start = new Date(s.startTs);
+        const end = new Date(s.endTs);
+        // For each minute of the session, check if it falls in this phase
+        let cur = new Date(start);
+        while (cur < end) {
+            const h = cur.getHours();
+            let inPhase = false;
+            if (phase.startH < phase.endH) {
+                inPhase = (h >= phase.startH && h < phase.endH);
+            } else {
+                // wraps midnight (23-6)
+                inPhase = (h >= phase.startH || h < phase.endH);
+            }
+            if (inPhase) total++;
+            cur = new Date(cur.getTime() + 60000); // advance 1 min
+        }
+    });
+    return total;
+}
+
+function getCurrentPhaseKey() {
+    const h = new Date().getHours();
+    if (h >= 6 && h < 12) return 'morning';
+    if (h >= 12 && h < 18) return 'afternoon';
+    if (h >= 18 && h < 23) return 'evening';
+    return 'latenight';
+}
+
+function renderDayPhases() {
+    const bar = document.getElementById('dayPhasesBar');
+    if (!bar) return;
+    const rec = workMap.get(getTodayStr());
+    const currentPhase = getCurrentPhaseKey();
+    const isWorking = rec && !!rec.currentStart;
+    const rangeStr = (p) => {
+        const sh = String(p.startH).padStart(2,'0');
+        const eh = String(p.endH).padStart(2,'0');
+        return `${sh}:00-${eh}:00`;
+    };
+    bar.innerHTML = DAY_PHASES.map(p => {
+        const mins = getPhaseMinutes(p, rec);
+        const isActive = p.key === currentPhase;
+        const worked = mins > 0;
+        const locked = !isActive && !worked;
+        let statusHtml;
+        if (isActive && !isWorking && !worked) {
+            statusHtml = `<div class="phase-status" style="color:var(--accent)"><i class="fas fa-play text-[0.5rem] mr-0.5"></i>${currentLang === 'zh' ? '点击专注' : 'Click to focus'}</div>`;
+        } else if (isActive && isWorking) {
+            statusHtml = `<div class="phase-status" style="color:var(--accent)"><i class="fas fa-circle text-[0.4rem] mr-0.5 animate-pulse"></i>${currentLang === 'zh' ? '专注中' : 'Focusing'}</div>`;
+        } else if (worked) {
+            statusHtml = `<div class="phase-status worked"><i class="fas fa-check-circle text-[0.5rem] mr-0.5"></i>${t('phaseWorked').replace('{n}', mins)}</div>`;
+        } else {
+            statusHtml = `<div class="phase-status idle">${locked ? '🔒' : t('phaseIdle')}</div>`;
+        }
+        return `
+            <div class="phase-card ${isActive ? 'phase-active' : ''} ${locked ? 'phase-locked' : ''}" ${isActive && !isWorking ? 'onclick="workStartClick()"' : ''}>
+                <div class="phase-icon">${p.icon}</div>
+                <div class="phase-name">${t(p.i18n)}</div>
+                <div class="phase-range">${rangeStr(p)}</div>
+                ${statusHtml}
+            </div>`;
+    }).join('');
+}
+
+// ======================== INIT ========================
+function init() {
+    loadAll();
+    // Clean up old per-task timer state from previous version
+    tasks.forEach(tk => {
+        delete tk.timerInterval;
+        delete tk.isTimingActive;
+        delete tk.lastStartTimeStr;
+        delete tk.lastFocusSecsBeforeStart;
+    });
+    tasks.forEach(tk => { if(tk.status==="未开始")tk.status="todo"; else if(tk.status==="进行中")tk.status="doing"; else if(tk.status==="已完成")tk.status="done"; });
+    saveAll();
+    applyI18n();
+    renderTasks();
+
+    startHeaderClock();
+
+    const rec = getTodayWork();
+    if (rec.currentStart) {
+        startWorkLiveTimer();
+        enterZenMode();
+    }
+    updateWorkUI();
+    updateFocusTodayUI();
+    updateStreakDisplay();
+    renderDayPhases();
+
+    document.getElementById("langToggleBtn").onclick = toggleLang;
+    document.getElementById("workStartBtn").onclick = workStartClick;
+    document.getElementById("workStopBtn").onclick = workStopClick;
+    document.getElementById("zenExitBtn").onclick = () => { workStopClick(); };
+    initAudioControls();
+    document.getElementById("addTaskBtn").onclick = () => {
+        const v=document.getElementById("newTaskInput").value.trim();
+        if(v){tasks.push({id:Date.now()+Math.random(),text:v,status:"todo",createdAt:new Date().toISOString(),focusSecs:0});saveAll();renderTasks();updateStatsAndCalendar();document.getElementById("newTaskInput").value="";}
+    };
+    document.getElementById("newTaskInput").addEventListener("keydown", e => { if(e.key==="Enter") document.getElementById("addTaskBtn").click(); });
+    document.getElementById("viewMoodHistoryBtn").onclick = showMoodHistory;
+    document.getElementById("viewTaskHistoryBtn").onclick = showTaskHistory;
+    document.getElementById("closeMoodModal").onclick = () => document.getElementById("moodModal").classList.add("hidden");
+    document.getElementById("closeTaskModal").onclick = () => document.getElementById("taskHistoryModal").classList.add("hidden");
+    document.getElementById("exportDataBtn").onclick = exportData;
+    document.getElementById("importDataBtn").onclick = () => document.getElementById("importFile").click();
+    document.getElementById("importFile").onchange = e => importData(e.target.files[0]);
+    document.getElementById("clearAllDataBtn").onclick = () => { if(confirm(t('clearAllConfirm'))&&confirm(t('clearAllConfirm2'))){localStorage.clear();location.reload();} };
+    // clearTimelineBtn removed
+    document.querySelectorAll(".mood-btn").forEach(btn => btn.addEventListener("click", () => recordMood(btn.getAttribute("data-mood"))));
+    document.getElementById("inspirationText").addEventListener("input", () => { inspirationMap.set(getTodayStr(), document.getElementById("inspirationText").value); saveAll(); });
+    document.getElementById("inspirationText").value = inspirationMap.get(getTodayStr()) || "";
+    // Flash notes
+    document.getElementById("flashNoteAddBtn").onclick = addFlashNote;
+    document.getElementById("flashNoteInput").addEventListener("keydown", e => { if(e.key==="Enter") addFlashNote(); });
+    document.getElementById("flashHistoryBtn").onclick = showFlashHistory;
+    document.getElementById("closeFlashModal").onclick = () => document.getElementById("flashHistoryModal").classList.add("hidden");
+    renderFlashNotes();
+    document.getElementById("dailyThemeInput").addEventListener("change", () => saveAll());
+    ['moodModal','taskHistoryModal','flashHistoryModal'].forEach(id => { document.getElementById(id).addEventListener("click", e => { if(e.target.id===id) e.target.classList.add("hidden"); }); });
+    updateStatsAndCalendar("week");
+}
+init();
+</script>
+</body>
+</html>
