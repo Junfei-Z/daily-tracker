@@ -868,9 +868,9 @@ const I18N = {
         metricTasks: "任务", metricFocus: "专注", metricWorkdays: "打卡",
         statTasks: "完成任务", statFocus: "专注(分钟)", statWorkdays: "打卡天数",
         weeklyInsight: "周报摘要", last7days: "近7天活跃度",
-        bestPhase: "最佳时段", completionRate: "完成率",
+        bestPhase: "最佳时段", completionRate: "本周完成",
         weeklyFocus: "本周专注", activeDays: "活跃天数",
-        avgDaily: "日均 {n} 分钟", totalTasks: "{done}/{total} 任务",
+        avgDaily: "日均 {n} 分钟", totalTasks: "历史共 {total} 件",
         daysActive: "{n}/7 天打卡",
         export: "导出", import: "导入", clearAll: "清空所有数据", backHome: "返回主页",
         moodDiary: "心情日记", completedTasks: "已完成任务",
@@ -926,9 +926,9 @@ const I18N = {
         metricTasks: "Tasks", metricFocus: "Focus", metricWorkdays: "Workdays",
         statTasks: "Tasks Done", statFocus: "Focus (min)", statWorkdays: "Work Days",
         weeklyInsight: "Weekly Insights", last7days: "Last 7 Days Activity",
-        bestPhase: "Best Phase", completionRate: "Completion",
+        bestPhase: "Best Phase", completionRate: "This Week",
         weeklyFocus: "Weekly Focus", activeDays: "Active Days",
-        avgDaily: "avg {n} min/day", totalTasks: "{done}/{total} tasks",
+        avgDaily: "avg {n} min/day", totalTasks: "{total} total",
         daysActive: "{n}/7 days active",
         export: "Export", import: "Import", clearAll: "Clear All Data", backHome: "Back to Home",
         moodDiary: "Mood Diary", completedTasks: "Completed Tasks",
@@ -1782,14 +1782,15 @@ function updateWeeklyInsights() {
         bestPhaseDetailEl.textContent = '';
     }
 
-    // Completion rate: all-time tasks created vs completed
-    const totalCreated = tasks.length + completedHistory.length;
-    const totalDone = completedHistory.length + tasks.filter(tk => tk.completed).length;
+    // Completion rate: based on completedHistory (last 7 days)
+    const dateSet = new Set(dates);
+    const weekCompleted = completedHistory.filter(h => dateSet.has(h.completedDate)).length;
+    const totalHistorical = completedHistory.length;
     const rateEl = document.getElementById('insightCompletionRate');
     const rateDetailEl = document.getElementById('insightCompletionDetail');
-    if (totalCreated > 0) {
-        rateEl.textContent = Math.round(totalDone / totalCreated * 100) + '%';
-        rateDetailEl.textContent = t('totalTasks').replace('{done}', totalDone).replace('{total}', totalCreated);
+    if (totalHistorical > 0) {
+        rateEl.textContent = weekCompleted;
+        rateDetailEl.textContent = t('totalTasks').replace('{done}', weekCompleted).replace('{total}', totalHistorical);
     } else {
         rateEl.textContent = '—';
         rateDetailEl.textContent = '';
