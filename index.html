@@ -743,6 +743,19 @@
                 <p class="text-[0.6875rem] text-zinc-300 mb-2" data-i18n="flashHint"></p>
                 <div id="flashNotesList" class="space-y-1.5 max-h-[260px] overflow-y-auto"></div>
             </section>
+            <!-- Daily arXiv Papers -->
+            <section class="card p-5 animate-fadein-up stagger-3">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="section-title">
+                        <i class="fas fa-newspaper text-rose-400"></i>
+                        <span data-i18n="arxivTitle"></span>
+                    </div>
+                    <span class="text-[0.6rem] text-zinc-300" id="arxivDate"></span>
+                </div>
+                <p class="text-[0.6875rem] text-zinc-300 mb-2" data-i18n="arxivHint"></p>
+                <div id="arxivPaperList" class="space-y-2 max-h-[500px] overflow-y-auto pr-1"></div>
+            </section>
+
             <!-- Hidden textarea for backwards compat -->
             <textarea id="inspirationText" class="hidden"></textarea>
         </div>
@@ -912,6 +925,9 @@ const I18N = {
         phaseWorked: "{n}分钟", phaseIdle: "—",
         assignSessions: "分配工作时段", noSessionsToAssign: "还没有工作记录", assignedTime: "已分配 {n} 分钟",
         phaseChanging: "时段即将切换，自动结束工作",
+        arxivTitle: "今日论文", arxivHint: "每日自动推送 arXiv 最新论文",
+        arxivLoading: "加载中...", arxivEmpty: "暂无论文数据",
+        arxivError: "加载失败，点击重试", arxivAuthors: "作者",
     },
     en: {
         mood: "Mood", diary: "Diary", workClock: "Today's Focus", morning: "Morning", afternoon: "Afternoon",
@@ -971,6 +987,9 @@ const I18N = {
         phaseWorked: "{n} min", phaseIdle: "—",
         assignSessions: "Assign work sessions", noSessionsToAssign: "No sessions yet", assignedTime: "{n} min assigned",
         phaseChanging: "Phase changing, auto-stopping work",
+        arxivTitle: "Daily Papers", arxivHint: "Auto-updated arXiv paper feed",
+        arxivLoading: "Loading...", arxivEmpty: "No paper data available",
+        arxivError: "Failed to load, click to retry", arxivAuthors: "Authors",
     }
 };
 let currentLang = localStorage.getItem('diary_lang') || 'zh';
@@ -2570,6 +2589,54 @@ function renderDayPhases() {
     }).join('');
 }
 
+// ======================== ARXIV PAPERS ========================
+function loadArxivPapers() {
+    const container = document.getElementById('arxivPaperList');
+    const dateEl = document.getElementById('arxivDate');
+    if (!container) return;
+    container.innerHTML = `<div class="text-center text-zinc-300 py-4 text-xs">${t('arxivLoading')}</div>`;
+
+    fetch('arxiv-daily.json?' + Date.now())
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(data => {
+            if (dateEl) dateEl.textContent = data.date || '';
+            if (!data.papers || !data.papers.length) {
+                container.innerHTML = `<div class="text-center text-zinc-300 py-4 text-xs">${t('arxivEmpty')}</div>`;
+                return;
+            }
+            container.innerHTML = data.papers.map((p, i) => {
+                const summaryHtml = p.summary_zh
+                    ? `<div class="text-[0.6875rem] text-zinc-500 mt-1 leading-relaxed">${escapeHtml(p.summary_zh)}</div>`
+                    : `<div class="text-[0.625rem] text-zinc-400 mt-1 line-clamp-2">${escapeHtml(p.abstract || '')}</div>`;
+                const authorsStr = (p.authors || []).slice(0, 3).join(', ') + (p.authors && p.authors.length > 3 ? ' et al.' : '');
+                const cats = (p.categories || []).slice(0, 3).map(c =>
+                    `<span class="inline-block px-1.5 py-0.5 rounded text-[0.5rem] bg-indigo-50 text-indigo-400 font-medium">${c}</span>`
+                ).join('');
+                return `
+                    <div class="p-2.5 rounded-lg bg-zinc-50/80 hover:bg-zinc-100/80 transition cursor-pointer animate-fadein-up" style="animation-delay:${i*0.04}s" onclick="window.open('${p.link}','_blank')">
+                        <div class="flex items-start gap-2">
+                            <span class="text-[0.6rem] font-bold text-indigo-400 mt-0.5 flex-shrink-0">${i+1}</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-xs font-semibold text-zinc-700 leading-snug">${escapeHtml(p.title)}</div>
+                                <div class="text-[0.6rem] text-zinc-400 mt-0.5">${authorsStr}</div>
+                                ${summaryHtml}
+                                <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                    ${cats}
+                                    <a href="${p.pdf}" target="_blank" onclick="event.stopPropagation()" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[0.5rem] bg-rose-50 text-rose-400 font-medium hover:bg-rose-100 transition no-underline">
+                                        <i class="fas fa-file-pdf text-[0.45rem]"></i>PDF
+                                    </a>
+                                    <span class="text-[0.5rem] text-zinc-300 ml-auto">${p.published || ''}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+        })
+        .catch(e => {
+            container.innerHTML = `<div class="text-center text-zinc-300 py-4 text-xs cursor-pointer" onclick="loadArxivPapers()">${t('arxivError')}</div>`;
+        });
+}
+
 // ======================== INIT ========================
 function init() {
     loadAll();
@@ -2628,6 +2695,7 @@ function init() {
     document.getElementById("dailyThemeInput").addEventListener("change", () => saveAll());
     ['moodModal','taskHistoryModal','flashHistoryModal'].forEach(id => { document.getElementById(id).addEventListener("click", e => { if(e.target.id===id) e.target.classList.add("hidden"); }); });
     updateStatsAndCalendar("week");
+    loadArxivPapers();
 }
 init();
 </script>
