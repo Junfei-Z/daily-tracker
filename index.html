@@ -756,7 +756,7 @@
                 </div>
                 <div id="calendarContainer" class="mt-1"></div>
                 <p class="text-[0.6875rem] text-center text-zinc-300 mt-2" data-i18n="calendarHint"></p>
-                <div id="calendarDetail" class="mt-2 text-xs bg-zinc-50 p-2.5 rounded-lg text-zinc-500 min-h-[2.5rem]"></div>
+                <div id="calendarDetail" class="mt-2 text-xs bg-zinc-50 p-2.5 rounded-lg text-zinc-500 min-h-[2.5rem] max-h-[20rem] overflow-y-auto"></div>
             </section>
 
             <section class="card p-4 animate-slide-right stagger-2">
@@ -1685,16 +1685,63 @@ function renderCalendar() {
     document.querySelectorAll(".cal-day").forEach(el => el.addEventListener("click", () => showDayDetail(el.dataset.date)));
 }
 function showDayDetail(ds) {
-    const w = workMap.get(ds), ws = w ? `${w.totalMinutes||0} ${t('minFocused')}` : t('noWorkRecord');
+    const w = workMap.get(ds);
     const mr = moodEntries.filter(m=>m.dateStr===ds).slice(-1)[0];
-    const mn = mr ? (t('moodNames')[mr.mood]||mr.mood) : '';
-    const ms = mr ? `${mn} ${mr.note||''} (${mr.exactTime||''})` : t('noMoodRecord');
-    document.getElementById("calendarDetail").innerHTML = `
-        <div class="font-medium text-zinc-600 mb-1">${ds}</div>
-        <div class="space-y-0.5 text-zinc-500">
-            <div><i class="fas fa-clock text-indigo-400 mr-1"></i>${ws}</div>
-            <div><i class="fas fa-heart text-indigo-300 mr-1"></i>${ms}</div>
-        </div>`;
+    const dayCompleted = completedHistory.filter(h=>h.completedDate===ds);
+    const dayNotes = flashNotes.filter(n=>n.dateStr===ds).sort((a,b)=>a.id-b.id);
+
+    let html = `<div class="font-medium text-zinc-600 mb-2">${ds}</div>`;
+
+    // Mood
+    if (mr) {
+        const mn = t('moodNames')[mr.mood]||mr.mood;
+        html += `<div class="text-xs text-zinc-400 mb-2"><i class="fas fa-heart text-indigo-300 mr-1"></i>${mn} ${mr.note||''} <span class="text-zinc-300">${mr.exactTime||''}</span></div>`;
+    }
+
+    // Sessions
+    if (w && w.sessions && w.sessions.length) {
+        html += `<div class="text-[0.625rem] font-semibold text-zinc-500 mb-1"><i class="fas fa-clock text-indigo-400 mr-1"></i>${t('sessionLog')} · ${w.totalMinutes||0} ${t('minFocused')}</div>`;
+        html += `<div class="space-y-0.5 mb-2">`;
+        w.sessions.forEach((s, i) => {
+            html += `<div class="flex items-center gap-1.5 text-[0.625rem] text-zinc-400 pl-3">
+                <span class="text-zinc-300">${i+1}.</span>
+                <span>${s.start} → ${s.end}</span>
+                <span class="ml-auto font-medium text-indigo-400">${s.duration}${t('minUnit')}</span>
+            </div>`;
+        });
+        html += `</div>`;
+    } else {
+        html += `<div class="text-xs text-zinc-300 mb-2"><i class="fas fa-clock text-zinc-300 mr-1"></i>${t('noWorkRecord')}</div>`;
+    }
+
+    // Completed tasks
+    if (dayCompleted.length) {
+        html += `<div class="text-[0.625rem] font-semibold text-zinc-500 mb-1"><i class="fas fa-check-circle text-emerald-400 mr-1"></i>${t('completedTasks')} · ${dayCompleted.length}</div>`;
+        html += `<div class="space-y-0.5 mb-2">`;
+        dayCompleted.forEach(h => {
+            html += `<div class="flex items-center gap-1.5 text-[0.625rem] text-zinc-400 pl-3">
+                <i class="fas fa-check text-emerald-300 text-[0.5rem]"></i>
+                <span class="text-zinc-600">${escapeHtml(h.taskName)}</span>
+                <span class="ml-auto text-zinc-300">${(h.completedTimeStr||'').slice(11,16)}</span>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // Flash notes
+    if (dayNotes.length) {
+        html += `<div class="text-[0.625rem] font-semibold text-zinc-500 mb-1"><i class="fas fa-bolt text-amber-400 mr-1"></i>${t('flashNotes')} · ${dayNotes.length}</div>`;
+        html += `<div class="space-y-0.5">`;
+        dayNotes.forEach(n => {
+            html += `<div class="flex items-start gap-1.5 text-[0.625rem] text-zinc-400 pl-3">
+                <span class="text-zinc-300 flex-shrink-0">${n.time}</span>
+                <span class="text-zinc-500">${escapeHtml(n.text)}</span>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    document.getElementById("calendarDetail").innerHTML = html;
 }
 
 // ======================== WEEKLY INSIGHTS ========================
